@@ -35,7 +35,7 @@ class Constants:
     price_buy = 0.4  # EUR/kWh
 
     # --- stuff ---
-    n_years = 20  # Number of years the system is running
+    n_years = 30  # Number of years the system is running
     annuity = 0.04 # Annuity rate
 
 

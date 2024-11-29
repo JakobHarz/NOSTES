@@ -4,7 +4,7 @@ from nlpAverage import AverageSTESNLP
 
 
 data = Data('data/data_dietenbach.csv')
-systemmodel =  AveragedStratStorageModel(2, 2, 2, data = data)
+systemmodel =  AveragedStratStorageModel(4, 2, 2, data = data)
 
 systemmodel.lbp[:] = 0.01
 systemmodel.ubp[:] = 100

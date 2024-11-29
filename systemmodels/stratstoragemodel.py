@@ -78,7 +78,7 @@ class StratStorageModel(SystemModel):
         assert self.x0.shape == self.x.shape
 
         # Overwrite the state and control bounds
-        self.lbx = ca.vertcat(self.params.min_T * ca.DM.ones(s_n), self.params.min_T * ca.DM.ones(g_n), 0)
+        self.lbx = ca.vertcat(self.params.min_T1 * ca.DM.ones(1), self.params.min_T * ca.DM.ones(s_n - 1), self.params.min_T * ca.DM.ones(g_n), 0) # min bounds for the top layer
         self.ubx = ca.vertcat(self.params.max_T * ca.DM.ones(s_n), self.params.max_T * ca.DM.ones(g_n), 1)
         self.lbu = ca.DM.zeros(self.u.shape)
         self.ubu = ca.DM.ones(self.u.shape)*ca.inf
@@ -202,8 +202,11 @@ class StratStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
-        annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
-        fixed_cost = CAPEX + OPEX * self.params.n_years + annuity_cost
+        r = self.params.annuity
+        n = self.params.n_years
+        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
+        # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
+        fixed_cost = ANI + OPEX * self.params.n_years
 
         # append to output
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
@@ -213,7 +216,7 @@ class StratStorageModel(SystemModel):
         self.outputs['cost_CAPEX_bat'] = {'value': CAPEX_bat, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX'] = {'value': CAPEX, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_OPEX'] = {'value': OPEX, 'unit': 'EUR', 'type': 'single'}
-        self.outputs['cost_annuity'] = {'value': annuity_cost, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['ANI'] = {'value': ANI, 'unit': 'EUR', 'type': 'single'}
 
         return fixed_cost
 

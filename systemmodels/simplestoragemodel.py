@@ -38,7 +38,7 @@ class SimpleStorageModel(SystemModel):
         P_grid = P_grid_buy - P_grid_sell
 
         # Fixed cost function
-        J_fix = self.compute_fixed_cost(self.p_fix, annuity = 0.04, n_year = 20)
+        J_fix = self.compute_fixed_cost(self.p_fix, annuity = 0.04, n_year = 30)
         self.J_fix = ca.Function('J_fix', [self.p_fix], [J_fix], ['p_fix'], ['J_fix'])
 
         # dynamics
@@ -89,22 +89,20 @@ class SimpleStorageModel(SystemModel):
         R_s = 1 / (self.params.U_wall_ins * A_cyl)  # [K/W] Thermal resistance of the wall
         return V_cyl, A_cyl, C_s, R_s
 
-    def compute_fixed_cost(self, p_fix, annuity, n_year):
-        """ Compute the investment cost of the system"""
+    def build_fixed_cost(self):
         I_hp,  I_s, I_pv, I_wind, I_bat = self.params.investment()
-        self.C_pv = 34.69 * 1e6 * self.p_fix[2]  # Wp
-        self.C_wind = 7.14 * 5 * 1e6 * self.p_fix[3] #Wp
-        self.C_bat = 2e6 * self.p_fix[4]  # Wh
-        self.C_hp = 2e7 * self.p_fix[1]  # W
         CAPEX_hp = I_hp * self.C_hp
         CAPEX_s = I_s * self.V_s
         CAPEX_pv = I_pv * self.C_pv
         CAPEX_wind = I_wind * self.C_wind
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
-        OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat) 
-        annuity_cost = annuity * CAPEX * (((1 + annuity)**n_year - 1) / annuity)
-        fixed_cost = CAPEX + OPEX * n_year + annuity_cost
+        OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
+        r = self.params.annuity
+        n = self.params.n_years
+        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
+        # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
+        fixed_cost = ANI + OPEX * self.params.n_years
         return fixed_cost
 
     def storage_model(self, x, u, p_fix, p_data):
