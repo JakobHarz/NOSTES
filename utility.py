@@ -222,9 +222,11 @@ class Results:
 
         # Print the formatted table
         headers = ['Key', 'Description', 'Unit','Value']
+        colaling = ['left', 'left', 'left', 'right']
         if comparewith is not None:
             headers.append('Value (Comp)')
-        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50, colalign=["right"]* len(headers)))
+            colaling.append('right')
+        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50, colalign=colaling))
 
     def _formatValue(self, value: np.ndarray):
         assert type(value) is np.ndarray, "The value should be a numpy array"
