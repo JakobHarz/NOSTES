@@ -157,6 +157,7 @@ class STESNLP:
         results = Results()
 
         # nlp cost
+        results.addResult('cost_GRID', float(self.f_Jrunning(wopt)), '-', 'Grid Buy/Sell Costs')
         results.addResult('nlp_J_running', float(self.f_Jrunning(wopt)), '-', 'Running Costs')
         results.addResult('nlp_J_fix', float(self.f_Jfix(wopt)), '-', 'Investment Costs')
         results.addResult('nlp_J_reg', float(self.f_Jreg(wopt)), '-', 'Regularization Costs')

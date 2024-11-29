@@ -10,6 +10,7 @@ results_average = Results.fromFile('results/dietenbach_average.npz')
 results_normal = Results.fromFile('results/dietenbach.npz')
 # results_normal.printSizings(comparewith=results_average)
 # results_normal.printNLPStats(comparewith=results_average)
+# results_normal.printCosts(comparewith=results_average)
 results_normal.printAll(comparewith=results_average)
 
 # %% Make some plots

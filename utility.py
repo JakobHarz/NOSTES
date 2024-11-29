@@ -123,7 +123,7 @@ class Results:
         self._valueDict = {}
         self._unitDict = {}
         self._descriptionDict = {}
-        self.keys = []
+        self.keys: List[str] = []
 
         # add some empty results
         self.addResult('X', np.nan, 'K', 'State Variables')
@@ -208,27 +208,14 @@ class Results:
             description = self._descriptionDict[key]
             unit = self._unitDict[key]
             value_array: np.ndarray = self._valueDict[key]
-            if value_array.size > 8:
-                value_str = "Numpy Array of shape " + str(value_array.shape)
-            else:
-                # value_str = f'{value_array:0.2f}'
-                value_str = str(value_array)
-                #remove all the newline characters from the str
-                value_str = value_str.replace("\n", "")
+            value_str = self._formatValue(value_array)
             row_data = [key, description, unit, value_str]
-
 
             if comparewith is not None:
                 if key in comparewith.keys:
-                    value_array_compare = comparewith._valueDict[key]
-                    if value_array_compare.size > 8:
-                        value_str_compar = "Numpy Array of shape " + str(value_array_compare.shape)
-                    else:
-                        # value_str_compar = f'{value_array_compare:0.2f}'
-                        value_str_compar = str(value_array_compare)
-
-                        # remove all the newline characters from the str
-                        value_str_compar = value_str_compar.replace("\n", "")
+                    value_str_compar = self._formatValue(comparewith[key])
+                else:
+                    value_str_compar = '-'
                 row_data.append(value_str_compar)
 
             table_data.append(row_data)
@@ -236,8 +223,35 @@ class Results:
         # Print the formatted table
         headers = ['Key', 'Description', 'Unit','Value']
         if comparewith is not None:
-            headers.append('Value (Comparison)')
-        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50))
+            headers.append('Value (Comp)')
+        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50, colalign=["right"]* len(headers)))
+
+    def _formatValue(self, value: np.ndarray):
+        assert type(value) is np.ndarray, "The value should be a numpy array"
+        if value.size > 8:
+            return "NumpyArray " + str(value.shape)
+        elif value.size == 1 and np.issubdtype(value.dtype, np.number):
+            # format with engineering notation (1E3, 1E6, 1E9, ...)
+            return self._formatEngineering(value)
+        else:
+            value_str = str(value).replace("\n", "")
+            # cut away after 20 letters
+            if len(value_str) > 23:
+                value_str = value_str[:20] + '...'
+            return value_str
+
+    def _formatEngineering(self,value):
+        """ formats the given value in engineering notation"""
+
+        exponent = np.floor(np.log10(np.abs(value))) // 3 * 3
+        significand = value / 10 ** exponent
+
+        # look up the exponent letter in a dictionary from -12 to 12
+        exponent_dict = {3: 'k', 6: 'M', 9: 'G', 12: 'T', 0: '', -3: 'm', -6: 'u', -9: 'n', -12: 'p'}
+        exponent_letter = exponent_dict.get(int(exponent), f'E{exponent}')
+
+        return f"{significand:.2f} {exponent_letter}"
+
 
     def printSizings(self, comparewith: 'Results' = None):
         self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
@@ -245,3 +259,6 @@ class Results:
 
     def printNLPStats(self, comparewith: 'Results' = None):
         self.printValues(['nlp_w_size','solver_iter_count','solver_t_wall_total'], comparewith=comparewith)
+
+    def printCosts(self, comparewith: 'Results' = None):
+        self.printValues([key for key in self.keys if key.startswith('cost_')], comparewith=comparewith)
