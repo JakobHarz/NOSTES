@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 
 # load average results
 results_average = Results.fromFile('results/dietenbach_average.npz')
-results_average.printSizings()
-
 results_normal = Results.fromFile('results/dietenbach.npz')
-results_normal.printSizings()
+# results_normal.printSizings(comparewith=results_average)
+# results_normal.printNLPStats(comparewith=results_average)
+results_normal.printAll(comparewith=results_average)
 
+# %% Make some plots
 plt.figure(figsize=(15,9))
 for ind_x in range(results_average['nx']):
     ubx, lbx = float(results_average['ubx'][ind_x]), float(results_average['lbx'][ind_x])

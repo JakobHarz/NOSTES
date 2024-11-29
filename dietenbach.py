@@ -15,7 +15,7 @@ systemmodel =  StratStorageModel(2, 2, 2, data = data)
 systemmodel.lbp[:] = 0.01
 systemmodel.ubp[:] = 100
 
-nlp = STESNLP(systemmodel, data, N = 365*6)
+nlp = STESNLP(systemmodel, data, N = 365*12)
 res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
 
 

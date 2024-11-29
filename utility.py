@@ -36,6 +36,8 @@ class Constants:
 
     # --- stuff ---
     n_years = 20  # Number of years the system is running
+    annuity = 0.04 # Annuity rate
+
 
     def battery_params(self):
         eta_ch = 0.95
@@ -103,16 +105,19 @@ class NumpyStruct:
         return np.array(slice_result).squeeze()
 
 
-class Results():
+class Results:
 
-    @property
-    def X(self): return self._valueDict['X']
-
-    @property
-    def U(self): return self._valueDict['U']
-
-    @property
-    def timegrid(self): return self._valueDict['timegrid']
+    # Expose some results, for easier access, not sure if this is useful
+    X: np.ndarray = np.nan
+    timegrid: np.ndarray = np.nan
+    U: np.ndarray = np.nan
+    J_running: np.ndarray = np.nan
+    J_fix: np.ndarray  = np.nan
+    V_s: np.ndarray = np.nan
+    C_bat: np.ndarray = np.nan
+    C_hp: np.ndarray = np.nan
+    C_pv: np.ndarray = np.nan
+    C_wind: np.ndarray = np.nan
 
     def __init__(self):
         self._valueDict = {}
@@ -133,10 +138,6 @@ class Results():
         self.addResult('C_hp', np.nan, 'W', 'Capacity of the heat pump')
         self.addResult('C_pv', np.nan, 'Wp', 'Capacity of the PV')
         self.addResult('C_wind', np.nan, 'Wp', 'Capacity of the wind turbine')
-
-    @property
-    def values(self) -> dict:
-        return self._valueDict
 
     @property
     def units(self) -> dict:
@@ -169,6 +170,10 @@ class Results():
         if name not in self.keys:
             self.keys.append(name)
 
+        # check if the name is also an attribute of the class, if yes, set
+        if hasattr(self, name):
+            setattr(self, name, value)
+
     def save(self,filename):
         # dumps the object into a npz file
         outdict = {}
@@ -192,34 +197,51 @@ class Results():
             res.addResult(name, inDict[name + '_value'], str(inDict[name + '_unit']), str(inDict[name + '_description']))
         return res
 
-    def printAll(self):
-        self.printValues(self.keys)
+    def printAll(self, comparewith: 'Results' = None):
+        self.printValues(self.keys, comparewith=comparewith)
 
-    def printValues(self, keys: List[str]):
-        max_width = 50
+    def printValues(self, keys: List[str], comparewith: 'Results' = None):
         # thanks chatgpt
         table_data = []
         for key in keys:
             # Truncate entries that exceed max_width
-            description = (self._descriptionDict[key][:max_width] + '...') if len(
-                self._descriptionDict[key]) > max_width else self._descriptionDict[key]
-            unit = (self._unitDict[key][:max_width] + '...') if len(self._unitDict[key]) > max_width else \
-            self._unitDict[key]
-
+            description = self._descriptionDict[key]
+            unit = self._unitDict[key]
             value_array: np.ndarray = self._valueDict[key]
             if value_array.size > 8:
                 value_str = "Numpy Array of shape " + str(value_array.shape)
             else:
-                value_str = (str(value_array)[:max_width] + '...') if len(
-                str(value_array)) > max_width else str(value_array)
-
+                # value_str = f'{value_array:0.2f}'
+                value_str = str(value_array)
                 #remove all the newline characters from the str
                 value_str = value_str.replace("\n", "")
+            row_data = [key, description, unit, value_str]
 
-            table_data.append([key, description, unit ,value_str])
+
+            if comparewith is not None:
+                if key in comparewith.keys:
+                    value_array_compare = comparewith._valueDict[key]
+                    if value_array_compare.size > 8:
+                        value_str_compar = "Numpy Array of shape " + str(value_array_compare.shape)
+                    else:
+                        # value_str_compar = f'{value_array_compare:0.2f}'
+                        value_str_compar = str(value_array_compare)
+
+                        # remove all the newline characters from the str
+                        value_str_compar = value_str_compar.replace("\n", "")
+                row_data.append(value_str_compar)
+
+            table_data.append(row_data)
 
         # Print the formatted table
-        print(tabulate(table_data, headers=['Key', 'Description', 'Unit','Value'], tablefmt='rst'))
+        headers = ['Key', 'Description', 'Unit','Value']
+        if comparewith is not None:
+            headers.append('Value (Comparison)')
+        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50))
 
-    def printSizings(self):
-        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'])
+    def printSizings(self, comparewith: 'Results' = None):
+        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
+
+
+    def printNLPStats(self, comparewith: 'Results' = None):
+        self.printValues(['nlp_w_size','solver_iter_count','solver_t_wall_total'], comparewith=comparewith)

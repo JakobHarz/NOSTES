@@ -115,7 +115,7 @@ class SystemModel:
         self.ubu = ca.inf * ca.DM.ones(self.u.shape)
 
         # for outputs
-        self.outputs: dict = None
+        self.outputs: dict = {}
         self._output_struct = None
         self._output_function = None
 

@@ -51,8 +51,8 @@ class StratStorageModel(SystemModel):
         self.C_hp = 2e7 * self.p_fix[1]  # W
 
         # Fixed cost function
-        J_fix = self.compute_fixed_cost(self.p_fix, annuity=0.04, n_year=20)
-        self.J_fix = ca.Function('J_fix', [self.p_fix], [J_fix], ['p_fix'], ['J_fix'])
+        fixed_cost = self.build_fixed_cost()
+        self.J_fix = ca.Function('J_fix', [self.p_fix], [fixed_cost], ['p_fix'], ['J_fix'])
 
         # grid use
         P_re = self.p_fix[2] * self.p_data[1] + self.p_fix[3] * self.p_data[2]  # P_pv + P_wind
@@ -97,22 +97,21 @@ class StratStorageModel(SystemModel):
         self.ng = g_vec.shape[0]
 
         # define output dictionary (still kind of stupid implementation)
-        self.outputs = {'X': {'value': self.x, 'type': 'profile'},
-                        'U': {'value': self.u, 'type': 'profile'},
-                        'P_grid': {'value': P_grid, 'type': 'profile'},
-                        'P_re': {'value': P_re, 'type': 'profile'},
-                        'P_hh': {'value': P_hh, 'type': 'profile'},
-                        'P_bat': {'value': P_bat, 'type': 'profile'},
-                        'P_hp': {'value': self.u[0], 'type': 'profile'},
-                        'J_running': {'value': self.cost_grid, 'type': 'profile'},
-                        'J_fix': {'value': J_fix, 'type': 'single'},
-                        'p_fix': {'value': self.p_fix, 'type': 'single'},
-                        'V_s': {'value': self.V_s, 'type': 'single', 'unit': 'm^3'},
-                        'C_bat': {'value': self.C_bat, 'type': 'single', 'unit': 'Wh'},
-                        'C_pv': {'value': self.C_pv, 'type': 'single', 'unit': 'Wp'},
-                        'C_wind': {'value': self.C_wind, 'type': 'single', 'unit': 'Wp'},
-                        'C_hp': {'value': self.C_hp, 'type': 'single', 'unit': 'W'},
-                        }
+        self.outputs['X'] = {'value': self.x, 'type': 'profile'}
+        self.outputs['U']= {'value': self.u, 'type': 'profile'}
+        self.outputs['P_grid']= {'value': P_grid, 'type': 'profile'}
+        self.outputs['P_re']= {'value': P_re, 'type': 'profile'}
+        self.outputs['P_hh']= {'value': P_hh, 'type': 'profile'}
+        self.outputs['P_bat']= {'value': P_bat, 'type': 'profile'}
+        self.outputs['P_hp']= {'value': self.u[0], 'type': 'profile'}
+        self.outputs['J_running']= {'value': self.cost_grid, 'type': 'profile'}
+        self.outputs['J_fix']= {'value': fixed_cost, 'type': 'single'}
+        self.outputs['p_fix']= {'value': self.p_fix, 'type': 'single'}
+        self.outputs['V_s']= {'value': self.V_s, 'type': 'single', 'unit': 'm^3'}
+        self.outputs['C_bat']= {'value': self.C_bat, 'type': 'single', 'unit': 'Wh'}
+        self.outputs['C_pv']= {'value': self.C_pv, 'type': 'single', 'unit': 'Wp'}
+        self.outputs['C_wind']= {'value': self.C_wind, 'type': 'single', 'unit': 'Wp'}
+        self.outputs['C_hp']= {'value': self.C_hp, 'type': 'single', 'unit': 'W'}
 
     def compute_sto_properties(self, s_n):
         heights = self.mh
@@ -194,8 +193,7 @@ class StratStorageModel(SystemModel):
         self.C_g = np.array(self.C_g)
         return self.C_g, self.R_g
 
-    def compute_fixed_cost(self, p_fix, annuity, n_year):
-        """ Compute the investment cost of the system"""
+    def build_fixed_cost(self):
         I_hp,  I_s, I_pv, I_wind, I_bat = self.params.investment()
         CAPEX_hp = I_hp * self.C_hp
         CAPEX_s = I_s * self.V_s
@@ -204,8 +202,19 @@ class StratStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
-        annuity_cost = annuity * CAPEX * (((1 + annuity)**n_year - 1) / annuity)
-        fixed_cost = CAPEX + OPEX * n_year + annuity_cost
+        annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
+        fixed_cost = CAPEX + OPEX * self.params.n_years + annuity_cost
+
+        # append to output
+        self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX_s'] = {'value': CAPEX_s, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX_pv'] = {'value': CAPEX_pv, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX_wind'] = {'value': CAPEX_wind, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX_bat'] = {'value': CAPEX_bat, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX'] = {'value': CAPEX, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_OPEX'] = {'value': OPEX, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_annuity'] = {'value': annuity_cost, 'unit': 'EUR', 'type': 'single'}
+
         return fixed_cost
 
     def storage_model(self, x_sto, Tamb, Qdot_hh, Qdot_hp, p_fix):

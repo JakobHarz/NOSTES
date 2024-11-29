@@ -130,7 +130,7 @@ class STESNLP:
                'g': self.G}
 
         # create the solver
-        opts = {'ipopt.max_iter': 0, 'ipopt.print_level': 5, 'print_time': 0, 'ipopt.linear_solver': 'ma97'}
+        opts = {'ipopt.max_iter': 0, 'ipopt.linear_solver': 'ma97'}
         opts.update(additional_options)
 
         solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
@@ -141,11 +141,11 @@ class STESNLP:
         wopt = self.w(res['x'])
 
         # process the results into a single dictionary
-        results = self.processOutput(wopt)
+        results = self.processOutput(wopt, solver.stats())
 
         return results
 
-    def processOutput(self, wopt) -> Results:
+    def processOutput(self, wopt, solver_stats: dict) -> Results:
         """ Processes the solution of the NLP into a dictionary.
         The keys in the dictionary are the defined outputs of the system.
         """
@@ -157,11 +157,22 @@ class STESNLP:
         results = Results()
 
         # nlp cost
-        results.addResult('NLP_J_running', float(self.f_Jrunning(wopt)), '-', 'Running Costs')
-        results.addResult('NLP_J_fix', float(self.f_Jfix(wopt)), '-', 'Investment Costs')
-        results.addResult('NLP_J_reg', float(self.f_Jreg(wopt)), '-', 'Regularization Costs')
+        results.addResult('nlp_J_running', float(self.f_Jrunning(wopt)), '-', 'Running Costs')
+        results.addResult('nlp_J_fix', float(self.f_Jfix(wopt)), '-', 'Investment Costs')
+        results.addResult('nlp_J_reg', float(self.f_Jreg(wopt)), '-', 'Regularization Costs')
 
+        # solver stats
+        results.addResult('solver_return_status', solver_stats['return_status'], '-', 'Return Status of the Solver')
+        results.addResult('solver_t_wall_total', solver_stats['t_wall_total'], 's', 'Total Wall Time of the Solver')
+        results.addResult('solver_iter_count', solver_stats['iter_count'], '-', 'Number of Iterations of the Solver')
 
+        # nlp stats
+        results.addResult('nlp_w_size', wopt.size, '-', 'Size of the nlp decision variables')
+
+        # discretization stats
+        results.addResult('N', self.N, '-', 'Number of (fine) discretization intervals')
+        results.addResult('T', self.T, 'h', 'Total time horizon')
+        results.addResult('h', self.h, 'h', '(fine) step size')
 
         # time grid
         results['timegrid'] = np.linspace(0, self.T - self.h, self.N)
