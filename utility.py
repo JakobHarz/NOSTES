@@ -1,4 +1,7 @@
+from typing import List, Union
+
 import numpy as np
+from tabulate import tabulate
 
 
 class Constants:
@@ -98,3 +101,125 @@ class NumpyStruct:
         slice_result = self.DMStruct[slice]
         # convert to numpy array and squeeze
         return np.array(slice_result).squeeze()
+
+
+class Results():
+
+    @property
+    def X(self): return self._valueDict['X']
+
+    @property
+    def U(self): return self._valueDict['U']
+
+    @property
+    def timegrid(self): return self._valueDict['timegrid']
+
+    def __init__(self):
+        self._valueDict = {}
+        self._unitDict = {}
+        self._descriptionDict = {}
+        self.keys = []
+
+        # add some empty results
+        self.addResult('X', np.nan, 'K', 'State Variables')
+        self.addResult('timegrid', np.nan, 'h', 'Time Grid')
+        self.addResult('U', np.nan, 'W', 'Control Variables')
+        self.addResult('J_running', np.nan, 'EUR', 'Running Costs')
+        self.addResult('J_fix', np.nan, 'EUR', 'Investment Costs')
+
+        # do for V_s, C_bat, C_hp, C_pv, C_wind
+        self.addResult('V_s', np.nan, 'm^3', 'Size of the thermal storage')
+        self.addResult('C_bat', np.nan, 'Wh', 'Capacity of the battery')
+        self.addResult('C_hp', np.nan, 'W', 'Capacity of the heat pump')
+        self.addResult('C_pv', np.nan, 'Wp', 'Capacity of the PV')
+        self.addResult('C_wind', np.nan, 'Wp', 'Capacity of the wind turbine')
+
+    @property
+    def values(self) -> dict:
+        return self._valueDict
+
+    @property
+    def units(self) -> dict:
+        return self._unitDict
+
+    def __getitem__(self, item):
+        return self._valueDict[item]
+
+    def __setitem__(self, key, value):
+        self.addResult(key, value)
+
+    def addResult(self, name:str, value, unit: Union[str,List[str]] = None, description:str = None):
+
+        if type(value) is not np.ndarray:
+            value = np.array(value)
+        self._valueDict[name] = value
+
+        if unit is not None:
+            self._unitDict[name] = unit
+        else:
+            # dont overwrite the unit if it is already set
+            self._unitDict[name] = self._unitDict.get(name,'-')
+
+        if description is not None:
+            self._descriptionDict[name] = description
+        else:
+            # dont overwrite the description if it is already set
+            self._descriptionDict[name] = self._descriptionDict.get(name,'-')
+
+        if name not in self.keys:
+            self.keys.append(name)
+
+    def save(self,filename):
+        # dumps the object into a npz file
+        outdict = {}
+        for name in self.keys:
+            outdict[name + '_value'] = self._valueDict[name]
+            outdict[name + '_unit'] = self._unitDict[name]
+            outdict[name + '_description'] = self._descriptionDict[name]
+
+        # store
+        # make sure that the filename ends with .npz
+        if not filename.endswith('.npz'):
+            filename += '.npz'
+        np.savez(filename, **outdict, names = self.keys)
+
+    @staticmethod
+    def fromFile(filename):
+        # loads the object from a npz file
+        inDict = np.load(filename,allow_pickle=False)
+        res = Results()
+        for name in inDict['names']:
+            res.addResult(name, inDict[name + '_value'], str(inDict[name + '_unit']), str(inDict[name + '_description']))
+        return res
+
+    def printAll(self):
+        self.printValues(self.keys)
+
+    def printValues(self, keys: List[str]):
+        max_width = 50
+        # thanks chatgpt
+        table_data = []
+        for key in keys:
+            # Truncate entries that exceed max_width
+            description = (self._descriptionDict[key][:max_width] + '...') if len(
+                self._descriptionDict[key]) > max_width else self._descriptionDict[key]
+            unit = (self._unitDict[key][:max_width] + '...') if len(self._unitDict[key]) > max_width else \
+            self._unitDict[key]
+
+            value_array: np.ndarray = self._valueDict[key]
+            if value_array.size > 8:
+                value_str = "Numpy Array of shape " + str(value_array.shape)
+            else:
+                value_str = (str(value_array)[:max_width] + '...') if len(
+                str(value_array)) > max_width else str(value_array)
+
+                #remove all the newline characters from the str
+                value_str = value_str.replace("\n", "")
+
+            table_data.append([key, description, unit ,value_str])
+
+        # Print the formatted table
+        print(tabulate(table_data, headers=['Key', 'Description', 'Unit','Value'], tablefmt='rst'))
+
+    def printSizings(self):
+        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'])
