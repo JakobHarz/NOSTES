@@ -86,8 +86,6 @@ class SystemModel:
         self.controlNames: List[str] = ['P_hp', 'P_ch', 'P_dis', 'P_Grid_buy', 'P_Grid_sell']
         self.p_fix_names: list = ['s_S', 's_hp', 's_pv', 's_wind', 's_bat']
 
-        self.constants = Constants()  # Initialize SystemParameters
-
         # initialization, overwrite in the subclass
         self.x0 = ca.DM.zeros(self.x.shape)
 
