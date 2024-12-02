@@ -65,14 +65,15 @@ class SystemModel:
                    - Battery capacity [Wh]
     """
 
-    def __init__(self, nx, nu, ndata, ntheta, data: Data,
-                 stateNames: List[str] = None,):
+    def __init__(self, nx, nu, ndata, ntheta, data: Data, constants,
+                 stateNames: List[str] = None):
 
         self.nx = nx
         self.nu = nu
         self.ndata = ndata
         self.ntheta = ntheta
         self.data: Data = data
+        self.constants = constants
 
         # Define the symbolic variables
         self.x = ca.SX.sym('x', nx)
@@ -85,7 +86,7 @@ class SystemModel:
         self.controlNames: List[str] = ['P_hp', 'P_ch', 'P_dis', 'P_Grid_buy', 'P_Grid_sell']
         self.p_fix_names: list = ['s_S', 's_hp', 's_pv', 's_wind', 's_bat']
 
-        self.params = Constants()  # Initialize SystemParameters
+        self.constants = Constants()  # Initialize SystemParameters
 
         # initialization, overwrite in the subclass
         self.x0 = ca.DM.zeros(self.x.shape)
@@ -123,13 +124,13 @@ class SystemModel:
         return self.data.getDataAtTime(time)
 
     def compute_Qdot_hp(self, P_hp, T_amb):
-        T_lift = self.params.T_hp - T_amb  # [K] Temperature lift of the heat pump
-        COP = self.params.eta_hp * self.params.T_hp / T_lift  # Coefficient of performance of the heat pump
+        T_lift = self.constants.T_hp - T_amb  # [K] Temperature lift of the heat pump
+        COP = self.constants.eta_hp * self.constants.T_hp / T_lift  # Coefficient of performance of the heat pump
         Qdot_hp = P_hp * COP  # Heat output of the heat pump
         return Qdot_hp
 
     def battery_model(self, x, u, p_fix, p_data):
-        eta_ch, eta_dis = self.params.battery_params()
+        eta_ch, eta_dis = self.constants.battery_params()
         P_ch = u[1]  # Charging power
         P_dis = u[2]  # Discharging power
         xdot_soc = (P_ch * eta_ch - P_dis / eta_dis) / (self.C_bat * 3600)  # [1/s]
@@ -140,11 +141,11 @@ class SystemModel:
         P_grid_pos = u[3] # [W]
         P_grid_neg = u[4] # [W]
 
-        price_sell_Wh = self.params.price_sell/1e3  # EUR/Wh
-        price_buy_Wh = self.params.price_buy/1e3  # EUR/Wh
+        price_sell_Wh = self.constants.price_sell / 1e3  # EUR/Wh
+        price_buy_Wh = self.constants.price_buy / 1e3  # EUR/Wh
 
         cost_grid_annual = price_sell_Wh*P_grid_neg + price_buy_Wh*P_grid_pos
-        cost_grid = cost_grid_annual * self.params.n_years  # [EUR]
+        cost_grid = cost_grid_annual * self.constants.n_years  # [EUR]
         return cost_grid
 
     @property
