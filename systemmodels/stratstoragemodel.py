@@ -6,7 +6,7 @@ from utility import Constants
 
 
 class StratStorageModel(SystemModel):
-    def __init__(self, s_n, g_n, distance, data: Data):
+    def __init__(self, s_n, g_n, distance, data: Data, constants: Constants):
         """ Stratified Model
         x (sto_n, g_n): T_s[s_n], T_g[g_n], x_soc
         u (5): P_hp [W], P_ch [W], P_dis [W], P_Grid_buy [W], P_Grid_sell [W]
@@ -23,16 +23,15 @@ class StratStorageModel(SystemModel):
                     - Qdot_HH heat demand of the household
             """
         nx = s_n + g_n + 1
-        super().__init__(nx, 5, 5, 5, data)
+        super().__init__(nx, 5, 5, 5, data, constants)
 
         self.stateNames = [f'T_s_{i}' for i in range(s_n)] + [f'T_g_{i}' for i in range(g_n)] + ['SOC']
-        self.params = Constants()  # Initialize SystemParameters
         self.s_n = s_n
         self.g_n = g_n  # Set g_n attribute
         self.distance = distance  # Set distance attribute
 
         # Load stratification parameters
-        strat_params = self.params.strat_storage()
+        strat_params = self.constants.strat_storage()
         self.strat_params = strat_params[s_n]
 
         # Initialize storage parameters
@@ -78,8 +77,8 @@ class StratStorageModel(SystemModel):
         assert self.x0.shape == self.x.shape
 
         # Overwrite the state and control bounds
-        self.lbx = ca.vertcat(self.params.min_T1 * ca.DM.ones(1), self.params.min_T * ca.DM.ones(s_n - 1), self.params.min_T * ca.DM.ones(g_n), 0) # min bounds for the top layer
-        self.ubx = ca.vertcat(self.params.max_T * ca.DM.ones(s_n), self.params.max_T * ca.DM.ones(g_n), 1)
+        self.lbx = ca.vertcat(self.constants.min_T1 * ca.DM.ones(1), self.constants.min_T * ca.DM.ones(s_n - 1), self.constants.min_T * ca.DM.ones(g_n), 0) # min bounds for the top layer
+        self.ubx = ca.vertcat(self.constants.max_T * ca.DM.ones(s_n), self.constants.max_T * ca.DM.ones(g_n), 1)
         self.lbu = ca.DM.zeros(self.u.shape)
         self.ubu = ca.DM.ones(self.u.shape)*ca.inf
 
@@ -88,7 +87,7 @@ class StratStorageModel(SystemModel):
         self.const_bat1 = self.u[1] - self.C_bat/4
         self.const_bat2 = self.u[2] - self.C_bat/4
         self.const_hp = self.u[0] - self.C_hp  # W
-        const_mdot_hp = self.mdot_hp - self.params.mdot_hp_max
+        const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
         g_vec = ca.vertcat(self.const_bat1, self.const_bat2, self.const_hp,
                            const_mdot_hp,self.const_Grid)
         self.g = ca.Function('g', [self.x, self.u, self.p_fix, self.p_data], [g_vec], ['x', 'u', 'p_fix', 'p_data'], ['g'])
@@ -116,7 +115,7 @@ class StratStorageModel(SystemModel):
     def compute_sto_properties(self, s_n):
         heights = self.mh
         lengths = [self.tl] + self.ml + [self.bl]
-        self.height = self.params.height
+        self.height = self.constants.height
         self.A_bot = self.bl ** 2
         self.A_top = self.tl ** 2
         self.A_v = self.A_top + self.A_bot + np.sqrt(self.A_top * self.A_bot)
@@ -143,14 +142,14 @@ class StratStorageModel(SystemModel):
     def compute_free_convection_params(self, s_n, heights, A_q):
         p_free = []
         for i in range(s_n-1):
-            p_free.append(self.params.lambda_eff * A_q[i] / heights[i])
-        p_free.append(self.params.lambda_eff * A_q[-1] / (self.height - sum(heights)))
+            p_free.append(self.constants.lambda_eff * A_q[i] / heights[i])
+        p_free.append(self.constants.lambda_eff * A_q[-1] / (self.height - sum(heights)))
         return p_free
 
     def compute_resistance_storage(self, s_n, A_surf):
         R_s = []
         for i in range(s_n):
-            R_s.append(1 / (self.params.U_wall_noins * self.A_surf[i]))
+            R_s.append(1 / (self.constants.U_wall_noins * self.A_surf[i]))
         return R_s
 
     def compute_ground_properties(self, g_n, distance):
@@ -176,7 +175,7 @@ class StratStorageModel(SystemModel):
             self.h_i1.append(h_i1)
             volume_i = 1 / 3 * (h_i * A_i - h_i1 * A_i1)
             self.volume_ground.append(volume_i)
-            C_ground_i = volume_i * self.params.rho_g * self.params.c_pg
+            C_ground_i = volume_i * self.constants.rho_g * self.constants.c_pg
             self.C_g.append(C_ground_i)
 
         self.d = [0] + [self.distance / 2] + [self.distance / 2 + self.distance * (i + 1) for i in
@@ -188,13 +187,13 @@ class StratStorageModel(SystemModel):
         self.A_s = np.array(self.A_s)
 
         self.distances = np.array([self.distance / 2] + [self.distance] * (self.g_n - 1) + [self.distance / 2])
-        R_ground_i = (1 / self.params.lambda_ground) * self.distances / (self.A_s)
+        R_ground_i = (1 / self.constants.lambda_ground) * self.distances / (self.A_s)
         self.R_g = R_ground_i.tolist()
         self.C_g = np.array(self.C_g)
         return self.C_g, self.R_g
 
     def build_fixed_cost(self):
-        I_hp,  I_s, I_pv, I_wind, I_bat = self.params.investment()
+        I_hp,  I_s, I_pv, I_wind, I_bat = self.constants.investment()
         CAPEX_hp = I_hp * self.C_hp
         CAPEX_s = I_s * self.V_s
         CAPEX_pv = I_pv * self.C_pv
@@ -202,11 +201,19 @@ class StratStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
+<<<<<<< HEAD
         # r = self.params.annuity
         n = self.params.n_years
         # ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
         # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
         fixed_cost = CAPEX + OPEX * self.params.n_years
+=======
+        r = self.constants.annuity
+        n = self.constants.n_years
+        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
+        # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
+        fixed_cost = ANI + OPEX * self.constants.n_years
+>>>>>>> 7a0d78e6220d683d87bb83619cae9a21502f4ab4
 
         # append to output
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
@@ -224,35 +231,35 @@ class StratStorageModel(SystemModel):
         T_s = x_sto[:self.s_n]
         T_g = x_sto[self.s_n:]
         C_g, R_g = self.compute_ground_properties(self.g_n, self.distance)
-        C_s = self.V_s * self.params.rho * self.params.c_p / self.s_n
+        C_s = self.V_s * self.constants.rho * self.constants.c_p / self.s_n
 
         R_g[0] = self.g_n * R_g[0]  # [K/W] consider parallel resistance
-        R_top = 1 / (self.params.U_top * self.A_top)  # [K/W] Thermal resistance of the top
+        R_top = 1 / (self.constants.U_top * self.A_top)  # [K/W] Thermal resistance of the top
 
         # Qdot_hp = self.compute_Qdot_hp(u[0] * p_fix[1], p_data[0])  # P_hp, T_amb
-        mdot_hp = Qdot_hp / (self.params.c_p * (self.params.T_hp - T_s[-1]))  # [kg/s]
+        mdot_hp = Qdot_hp / (self.constants.c_p * (self.constants.T_hp - T_s[-1]))  # [kg/s]
         self.mdot_hp = mdot_hp
         Qdot_load = Qdot_hh  # heat demand of the households
         mdot_load = Qdot_load / (
-                    self.params.c_p * (self.params.T_sup_hh - self.params.T_ret_hh))  # [kg/s] fix sup & ret temp
+                self.constants.c_p * (self.constants.T_sup_hh - self.constants.T_ret_hh))  # [kg/s] fix sup & ret temp
         T_lr = T_s[0] - (
-                    self.params.T_sup_hh - self.params.T_ret_hh)  # [K] return temperature from the load (no heat exchange loss)
+                self.constants.T_sup_hh - self.constants.T_ret_hh)  # [K] return temperature from the load (no heat exchange loss)
 
         # Storage Dynamics
-        Tdot_s1 = 1 / C_s * (self.params.c_p * mdot_hp * (self.params.T_hp - T_s[0])
-                             - self.params.c_p * mdot_load * (T_s[0] - T_s[1])
+        Tdot_s1 = 1 / C_s * (self.constants.c_p * mdot_hp * (self.constants.T_hp - T_s[0])
+                             - self.constants.c_p * mdot_load * (T_s[0] - T_s[1])
                              - 1 / R_top * (T_s[0] - Tamb)  # T_amb
                              + self.p_free[0] * (T_s[1] - T_s[0])
                              - 1 / (self.R_s[0] + R_g[0]) * (T_s[0] - T_g[0]))  # [K/s]
         Tdot_si = []
         for i in range(1, self.s_n - 1):
-            Tdot_stoi = 1 / C_s * (self.params.c_p * mdot_hp * (T_s[i - 1] - T_s[i])
-                                   - self.params.c_p * mdot_load * (T_s[i] - T_s[i + 1])
+            Tdot_stoi = 1 / C_s * (self.constants.c_p * mdot_hp * (T_s[i - 1] - T_s[i])
+                                   - self.constants.c_p * mdot_load * (T_s[i] - T_s[i + 1])
                                    + self.p_free[i - 1] * (T_s[i - 1] - 2 * T_s[i] + T_s[i + 1])
                                    - 1 / (self.R_s[i - 1] + R_g[0]) * (T_s[i] - T_g[0]))  # [K/s]
             Tdot_si.append(Tdot_stoi)
-        Tdot_sm = 1 / C_s * (self.params.c_p * mdot_hp * (T_s[self.s_n - 2] - T_s[self.s_n - 1])
-                             - self.params.c_p * mdot_load * (x_sto[self.s_n - 1] - T_lr)
+        Tdot_sm = 1 / C_s * (self.constants.c_p * mdot_hp * (T_s[self.s_n - 2] - T_s[self.s_n - 1])
+                             - self.constants.c_p * mdot_load * (x_sto[self.s_n - 1] - T_lr)
                              - self.p_free[-1] * (T_s[self.s_n - 1] - T_s[self.s_n - 2])
                              - 1 / (self.R_s[-1] + R_g[0]) * (T_s[self.s_n - 1] - T_g[0]))  # [K/s]
         # Ground Dynamics
@@ -267,7 +274,7 @@ class StratStorageModel(SystemModel):
                                    + (1 / R_g[i + 1]) * (T_g[i + 1] - T_g[i]))
             Tdot_gi.append(Tdot_i)
         Tdot_gN = 1 / C_g[self.g_n - 1] * (1 / R_g[self.g_n - 1] * (T_g[self.g_n - 2] - T_g[self.g_n - 1])
-                                           + 1 / R_g[self.g_n] * (self.params.T_bc - T_g[self.g_n - 1]))
+                                           + 1 / R_g[self.g_n] * (self.constants.T_bc - T_g[self.g_n - 1]))
 
         Tdot_g = ca.vertcat(Tdot_g1, *Tdot_gi, Tdot_gN)
         Tdot_s = ca.vertcat(Tdot_s1, *Tdot_si, Tdot_sm)

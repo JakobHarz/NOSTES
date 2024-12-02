@@ -7,7 +7,7 @@ from utility import Constants
 
 
 class AveragedStratStorageModel(StratStorageModel):
-    def __init__(self, s_n, g_n, distance, data: Data):
+    def __init__(self, s_n, g_n, distance, data: Data, constants: Constants):
         """ Stratified Model
         x (sto_n, g_n): T_s[s_n], T_g[g_n], x_soc
         u (5): P_hp [W], P_ch [W], P_dis [W], P_Grid_buy [W], P_Grid_sell [W]
@@ -23,7 +23,7 @@ class AveragedStratStorageModel(StratStorageModel):
                     - P_HH electric household power demand
                     - Qdot_HH heat demand of the household
             """
-        super().__init__(s_n, g_n, distance, data)
+        super().__init__(s_n, g_n, distance, data, constants)
 
         # split the state
         self.x_sto = self.x[:-1]  # the states of the storage
@@ -47,7 +47,7 @@ class AveragedStratStorageModel(StratStorageModel):
         self.ng_fine = g_vec_fine.shape[0]
 
         # coarse constraints
-        g_vec_coarse = ca.vertcat(self.mdot_hp - self.params.mdot_hp_max)
+        g_vec_coarse = ca.vertcat(self.mdot_hp - self.constants.mdot_hp_max)
         self.g_coarse = ca.Function('g', [self.x_sto,_Qdot_hp_SX], [g_vec_coarse])
         self.lbg_coarse = ca.vertcat(-ca.inf)
         self.ubg_coarse = ca.DM.zeros(g_vec_coarse.shape)
