@@ -201,19 +201,13 @@ class StratStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
-<<<<<<< HEAD
+
         # r = self.params.annuity
-        n = self.params.n_years
+        n = self.constants.n_years
         # ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
         # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
-        fixed_cost = CAPEX + OPEX * self.params.n_years
-=======
-        r = self.constants.annuity
-        n = self.constants.n_years
-        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
-        # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
-        fixed_cost = ANI + OPEX * self.constants.n_years
->>>>>>> 7a0d78e6220d683d87bb83619cae9a21502f4ab4
+        fixed_cost = CAPEX + OPEX * self.constants.n_years
+
 
         # append to output
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
