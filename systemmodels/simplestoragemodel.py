@@ -98,11 +98,12 @@ class SimpleStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
-        r = self.params.annuity
+        # r = self.params.annuity
         n = self.params.n_years
-        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
+        # ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
         # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
-        fixed_cost = ANI + OPEX * self.params.n_years
+        fixed_cost = CAPEX + OPEX * self.params.n_years
+
         return fixed_cost
 
     def storage_model(self, x, u, p_fix, p_data):

@@ -202,11 +202,11 @@ class StratStorageModel(SystemModel):
         CAPEX_bat = I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_hp + CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat)
-        r = self.params.annuity
+        # r = self.params.annuity
         n = self.params.n_years
-        ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
+        # ANI = CAPEX * (r * (1 + r)**n) / ((1 + r)**n - 1)
         # annuity_cost = self.params.annuity * CAPEX * (((1 + self.params.annuity)**self.params.n_years - 1) / self.params.annuity)
-        fixed_cost = ANI + OPEX * self.params.n_years
+        fixed_cost = CAPEX + OPEX * self.params.n_years
 
         # append to output
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
@@ -216,7 +216,7 @@ class StratStorageModel(SystemModel):
         self.outputs['cost_CAPEX_bat'] = {'value': CAPEX_bat, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX'] = {'value': CAPEX, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_OPEX'] = {'value': OPEX, 'unit': 'EUR', 'type': 'single'}
-        self.outputs['ANI'] = {'value': ANI, 'unit': 'EUR', 'type': 'single'}
+        # self.outputs['ANI'] = {'value': ANI, 'unit': 'EUR', 'type': 'single'}
 
         return fixed_cost
 
