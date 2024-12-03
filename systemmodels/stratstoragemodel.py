@@ -65,7 +65,7 @@ class StratStorageModel(SystemModel):
         P_grid = P_grid_buy - P_grid_sell
 
         # dynamics
-        Qdot_hp = self.compute_Qdot_hp(self.u[0] * self.p_fix[1], self.p_data[0])  # P_hp, T_amb
+        Qdot_hp = self.compute_Qdot_hp(self.u[0], self.p_data[0])  # P_hp, T_amb
         ODE = ca.vertcat(self.storage_model(x_sto= self.x[:-1], Tamb=self.p_data[0], Qdot_hh=self.p_data[4],Qdot_hp=Qdot_hp,
                                             p_fix = self.p_fix),
                          self.battery_model(self.x, self.u, self.p_fix, self.p_data))
@@ -86,7 +86,7 @@ class StratStorageModel(SystemModel):
         self.const_Grid = -P_grid_buy + P_grid_sell - P_re + P_hh + P_hp - P_bat_discharge + P_bat_charge
         self.const_bat1 = self.u[1] - self.C_bat/4
         self.const_bat2 = self.u[2] - self.C_bat/4
-        self.const_hp = self.u[0] - self.C_hp  # W
+        self.const_hp = Qdot_hp - self.C_hp  # W
         const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
         g_vec = ca.vertcat(self.const_bat1, self.const_bat2, self.const_hp,
                            const_mdot_hp,self.const_Grid)
@@ -103,6 +103,10 @@ class StratStorageModel(SystemModel):
         self.outputs['P_hh']= {'value': P_hh, 'type': 'profile'}
         self.outputs['P_bat']= {'value': P_bat, 'type': 'profile'}
         self.outputs['P_hp']= {'value': self.u[0], 'type': 'profile'}
+        self.outputs['Qdot_hp'] = {'value': Qdot_hp, 'type': 'profile'}
+        self.outputs['mdot_hp'] = {'value': self.mdot_hp, 'type': 'profile'}
+        # self.outputs['self.mdot_load'] = {'value': self.mdot_load, 'type': 'profile'}
+        self.outputs['Qdot_load'] = {'value': self.Qdot_load, 'type': 'profile'}
         self.outputs['J_running']= {'value': self.cost_grid, 'type': 'profile'}
         self.outputs['J_fix']= {'value': fixed_cost, 'type': 'single'}
         self.outputs['p_fix']= {'value': self.p_fix, 'type': 'single'}
@@ -213,7 +217,7 @@ class StratStorageModel(SystemModel):
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_s'] = {'value': CAPEX_s, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_pv'] = {'value': CAPEX_pv, 'unit': 'EUR', 'type': 'single'}
-        self.outputs['cost_CAPEX_wind'] = {'value': CAPEX_wind, 'unit': 'EUR', 'type': 'single'}
+        # self.outputs['cost_CAPEX_wind'] = {'value': CAPEX_wind, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_bat'] = {'value': CAPEX_bat, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX'] = {'value': CAPEX, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_OPEX'] = {'value': OPEX, 'unit': 'EUR', 'type': 'single'}
@@ -233,27 +237,27 @@ class StratStorageModel(SystemModel):
         # Qdot_hp = self.compute_Qdot_hp(u[0] * p_fix[1], p_data[0])  # P_hp, T_amb
         mdot_hp = Qdot_hp / (self.constants.c_p * (self.constants.T_hp - T_s[-1]))  # [kg/s]
         self.mdot_hp = mdot_hp
-        Qdot_load = Qdot_hh  # heat demand of the households
-        mdot_load = Qdot_load / (
+        self.Qdot_load = Qdot_hh  # heat demand of the households
+        self.mdot_load = self.Qdot_load / (
                 self.constants.c_p * (self.constants.T_sup_hh - self.constants.T_ret_hh))  # [kg/s] fix sup & ret temp
         T_lr = T_s[0] - (
                 self.constants.T_sup_hh - self.constants.T_ret_hh)  # [K] return temperature from the load (no heat exchange loss)
 
         # Storage Dynamics
         Tdot_s1 = 1 / C_s * (self.constants.c_p * mdot_hp * (self.constants.T_hp - T_s[0])
-                             - self.constants.c_p * mdot_load * (T_s[0] - T_s[1])
+                             - self.constants.c_p * self.mdot_load * (T_s[0] - T_s[1])
                              - 1 / R_top * (T_s[0] - Tamb)  # T_amb
                              + self.p_free[0] * (T_s[1] - T_s[0])
                              - 1 / (self.R_s[0] + R_g[0]) * (T_s[0] - T_g[0]))  # [K/s]
         Tdot_si = []
         for i in range(1, self.s_n - 1):
             Tdot_stoi = 1 / C_s * (self.constants.c_p * mdot_hp * (T_s[i - 1] - T_s[i])
-                                   - self.constants.c_p * mdot_load * (T_s[i] - T_s[i + 1])
-                                   + self.p_free[i - 1] * (T_s[i - 1] - 2 * T_s[i] + T_s[i + 1])
-                                   - 1 / (self.R_s[i - 1] + R_g[0]) * (T_s[i] - T_g[0]))  # [K/s]
+                                   - self.constants.c_p * self.mdot_load * (T_s[i] - T_s[i + 1])
+                                   + self.p_free[i] * (T_s[i - 1] - 2 * T_s[i] + T_s[i + 1])
+                                   - 1 / (self.R_s[i] + R_g[0]) * (T_s[i] - T_g[0]))  # [K/s]
             Tdot_si.append(Tdot_stoi)
         Tdot_sm = 1 / C_s * (self.constants.c_p * mdot_hp * (T_s[self.s_n - 2] - T_s[self.s_n - 1])
-                             - self.constants.c_p * mdot_load * (x_sto[self.s_n - 1] - T_lr)
+                             - self.constants.c_p * self.mdot_load * (x_sto[self.s_n - 1] - T_lr)
                              - self.p_free[-1] * (T_s[self.s_n - 1] - T_s[self.s_n - 2])
                              - 1 / (self.R_s[-1] + R_g[0]) * (T_s[self.s_n - 1] - T_g[0]))  # [K/s]
         # Ground Dynamics
@@ -289,24 +293,24 @@ class StratStorageModel(SystemModel):
     #     mdot_hp = Qdot_hp / (self.params.c_p * (self.params.T_hp - T_s[-1]))  # [kg/s]
     #     self.mdot_hp = mdot_hp
     #     Qdot_load = p_data[4]  # heat demand of the households
-    #     mdot_load = Qdot_load / (self.params.c_p * (self.params.T_sup_hh - self.params.T_ret_hh)) # [kg/s] fix sup & ret temp
+    #     self.mdot_load = Qdot_load / (self.params.c_p * (self.params.T_sup_hh - self.params.T_ret_hh)) # [kg/s] fix sup & ret temp
     #     T_lr = T_s[0] - (self.params.T_sup_hh - self.params.T_ret_hh) # [K] return temperature from the load (no heat exchange loss)
     #
     #     # Storage Dynamics
     #     Tdot_s1 = 1/C_s * (self.params.c_p * mdot_hp * (self.params.T_hp - T_s[0])
-    #                                  - self.params.c_p * mdot_load * (T_s[0] - T_s[1])
+    #                                  - self.params.c_p * self.mdot_load * (T_s[0] - T_s[1])
     #                                  - 1/R_top * (T_s[0] - p_data[0]) #T_amb
     #                                  + self.p_free[0] * (T_s[1] -T_s[0])
     #                                  - 1/(self.R_s[0] +R_g[0]) * (T_s[0] -T_g[0])) # [K/s]
     #     Tdot_si = []
     #     for i in range(1, self.s_n-1):
     #         Tdot_stoi = 1/C_s * (self.params.c_p * mdot_hp * (T_s[i-1] - T_s[i])
-    #                                  - self.params.c_p * mdot_load * (T_s[i] - T_s[i+1])
+    #                                  - self.params.c_p * self.mdot_load * (T_s[i] - T_s[i+1])
     #                                  + self.p_free[i-1] * (T_s[i-1] - 2* T_s[i] + T_s[i+1])
     #                                  - 1/(self.R_s[i-1] + R_g[0]) * (T_s[i] - T_g[0])) # [K/s]
     #         Tdot_si.append(Tdot_stoi)
     #     Tdot_sm = 1/C_s * (self.params.c_p * mdot_hp * (T_s[self.s_n-2] - T_s[self.s_n-1])
-    #                                     - self.params.c_p * mdot_load * (x[self.s_n-1] - T_lr)
+    #                                     - self.params.c_p * self.mdot_load * (x[self.s_n-1] - T_lr)
     #                                     - self.p_free[-1] * (T_s[self.s_n-1] - T_s[self.s_n-2])
     #                                     - 1/(self.R_s[-1] + R_g[0]) * (T_s[self.s_n-1] - T_g[0])) # [K/s]
     #     # Ground Dynamics
