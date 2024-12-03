@@ -8,13 +8,14 @@ from utility import Constants
 data = Data('data/data_dietenbach.csv')
 constants = Constants()
 
-# Different Electricity price scenarios
+
+# # # Different Electricity price scenarios
 # for i in range(10):
 #     constants.price_buy = 0.1 + 0.1 * i
 #     systemmodel =  AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
 
-#     systemmodel.lbp[:] = 0.01
-#     systemmodel.ubp[:] = 100
+#     systemmodel.lbp[:] = 0.1
+#     systemmodel.ubp[:] = 10
 
 #     # systemmodel.lbp[3] = 0
 #     # systemmodel.ubp[3] = 0
@@ -24,18 +25,22 @@ constants = Constants()
 #     # systemmodel.ubu[1:3] = 0
 
 #     nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
-#     res = nlp.solve({'ipopt.max_iter': 1000,'ipopt.linear_solver': 'ma97'})
+#     res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
 
 #     res.save(f'results/dietenbach_average_varyPrice_{i}.npz')
 
-systemmodel = AveragedStratStorageModel(2, 2, 2, data = data, constants=constants)
+# constants.price_buy = 0.1 + 0.1 * 2
+systemmodel = AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
+# nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
+# res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
+# res.save(f'results/dietenbach_average_varyPrice_{2}.npz')
 
-systemmodel.lbp[:] = 0.01
-systemmodel.ubp[:] = 100
+systemmodel.lbp[:] = 0.1
+systemmodel.ubp[:] = 10
 systemmodel.lbp[3] = 0
 systemmodel.ubp[3] = 0
 
-nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
+nlp = AverageSTESNLP(systemmodel, data, N = 365*12)
 res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
 res.save('results/dietenbach_average_nowind.npz')
 
