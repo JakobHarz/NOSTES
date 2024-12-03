@@ -38,6 +38,13 @@ class Constants:
     n_years = 30  # Number of years the system is running
     annuity = 0.04 # Annuity rate
 
+    # ---- Default Scaling of size params ----
+    C_bat_default = 2E7 # Wh
+    C_hp_default = 2E7 # W (thermal)
+    C_wind_default = 7.14 * 5 * 1e6 # Wp
+    C_pv_default =  34.69 * 1e6 # Wp
+
+
 
     def battery_params(self):
         eta_ch = 0.95

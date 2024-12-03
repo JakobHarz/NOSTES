@@ -40,14 +40,17 @@ class AveragedStratStorageModel(StratStorageModel):
         self.f_bat = ca.Function('f', [self.u, self.p_fix], [self.battery_model(self.x, self.u, self.p_fix, self.p_data)])
 
         # fine constraints
-        g_vec_fine = ca.vertcat(self.const_bat1, self.const_bat2, self.const_hp, self.const_Grid)
+        g_vec_fine = ca.vertcat(self.const_bat1,
+                                self.const_bat2,
+                                self.const_hp,
+                                self.const_Grid)
         self.g_fine = ca.Function('g', [self.x_bat, self.u, self.p_fix, self.p_data], [g_vec_fine])
         self.lbg_fine = ca.vertcat(-ca.inf * ca.DM.ones((g_vec_fine.shape[0] - 1, 1)), 0)
         self.ubg_fine = ca.DM.zeros(g_vec_fine.shape)
         self.ng_fine = g_vec_fine.shape[0]
 
         # coarse constraints
-        g_vec_coarse = ca.vertcat(self.mdot_hp - self.constants.mdot_hp_max)
-        self.g_coarse = ca.Function('g', [self.x_sto,_Qdot_hp_SX], [g_vec_coarse])
-        self.lbg_coarse = ca.vertcat(-ca.inf)
-        self.ubg_coarse = ca.DM.zeros(g_vec_coarse.shape)
+        # g_vec_coarse = ca.vertcat(self.mdot_hp - self.constants.mdot_hp_max)
+        # self.g_coarse = ca.Function('g', [self.x_sto,_Qdot_hp_SX], [g_vec_coarse])
+        # self.lbg_coarse = ca.vertcat(-ca.inf)
+        # self.ubg_coarse = ca.DM.zeros(g_vec_coarse.shape)

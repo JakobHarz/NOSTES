@@ -43,11 +43,11 @@ class StratStorageModel(SystemModel):
         # Compute storage properties
         self.compute_sto_properties(s_n)
 
-        # sizes of the sources, storages and sinks
-        self.C_pv = 34.69 * 1e6 * self.p_fix[2]  # Wp
-        self.C_wind = 7.14 * 5 * 1e6 * self.p_fix[3] #Wp
-        self.C_bat = 2e6 * self.p_fix[4]  # Wh
-        self.C_hp = 2e7 * self.p_fix[1]  # W
+        # sizes of the sources, storages and sinks with their default size
+        self.C_hp = constants.C_hp_default * self.p_fix[1]  # W
+        self.C_pv = constants.C_pv_default* self.p_fix[2]  # Wp
+        self.C_wind = constants.C_wind_default * self.p_fix[3] #Wp
+        self.C_bat = constants.C_bat_default * self.p_fix[4]  # Wh
 
         # Fixed cost function
         fixed_cost = self.build_fixed_cost()
@@ -87,9 +87,14 @@ class StratStorageModel(SystemModel):
         self.const_bat1 = self.u[1] - self.C_bat/4
         self.const_bat2 = self.u[2] - self.C_bat/4
         self.const_hp = Qdot_hp - self.C_hp  # W
-        const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
-        g_vec = ca.vertcat(self.const_bat1, self.const_bat2, self.const_hp,
-                           const_mdot_hp,self.const_Grid)
+        self.const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
+
+
+        g_vec = ca.vertcat(self.const_bat1,
+                           self.const_bat2,
+                           self.const_hp,
+                           # self.const_mdot_hp,
+                           self.const_Grid)
         self.g = ca.Function('g', [self.x, self.u, self.p_fix, self.p_data], [g_vec], ['x', 'u', 'p_fix', 'p_data'], ['g'])
         self.lbg = ca.vertcat(-ca.inf*ca.DM.ones((g_vec.shape[0]-1,1)), 0)
         self.ubg = ca.DM.zeros(g_vec.shape)

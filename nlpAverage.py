@@ -146,9 +146,9 @@ class AverageSTESNLP(STESNLP):
             ubG.append(ca.DM.zeros(averagesystem.x_sto.shape))
 
             # constraint satisfaction for coarse grid
-            G.append(averagesystem.g_coarse(x_sto_m, Qdot_hp_aver))
-            lbG.append(averagesystem.lbg_coarse)
-            ubG.append(averagesystem.ubg_coarse)
+            # G.append(averagesystem.g_coarse(x_sto_m, Qdot_hp_aver))
+            # lbG.append(averagesystem.lbg_coarse)
+            # ubG.append(averagesystem.ubg_coarse)
 
         # store the nlp variables
         self.w = w
