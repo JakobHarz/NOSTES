@@ -137,7 +137,7 @@ class AverageSTESNLP(STESNLP):
             Tamb_aver = np.mean(p_data_vals[0])
             Qdot_hh_aver = np.mean(p_data_vals[4])
             Qdot_hp_aver = 1 / ratio * sum(
-                [averagesystem.compute_Qdot_hp(P_hp * p_fix[1], T_amb) for P_hp, T_amb in zip(u_vals, p_data_vals[0])])
+                [averagesystem.compute_Qdot_hp(P_hp, T_amb) for P_hp, T_amb in zip(u_vals, p_data_vals[0])])
 
             # implicit euler step of the average dynamics
             averageDynamicsEval = averagesystem.f_sto_average(x_sto_mp1, Tamb_aver, Qdot_hh_aver, Qdot_hp_aver, p_fix)
