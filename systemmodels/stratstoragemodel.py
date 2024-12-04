@@ -222,7 +222,7 @@ class StratStorageModel(SystemModel):
         self.outputs['cost_CAPEX_hp'] = {'value': CAPEX_hp, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_s'] = {'value': CAPEX_s, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_pv'] = {'value': CAPEX_pv, 'unit': 'EUR', 'type': 'single'}
-        # self.outputs['cost_CAPEX_wind'] = {'value': CAPEX_wind, 'unit': 'EUR', 'type': 'single'}
+        self.outputs['cost_CAPEX_wind'] = {'value': CAPEX_wind, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX_bat'] = {'value': CAPEX_bat, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_CAPEX'] = {'value': CAPEX, 'unit': 'EUR', 'type': 'single'}
         self.outputs['cost_OPEX'] = {'value': OPEX, 'unit': 'EUR', 'type': 'single'}

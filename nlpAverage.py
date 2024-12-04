@@ -170,4 +170,4 @@ class AverageSTESNLP(STESNLP):
         self.f_outputs = ca.Function('f_outputs', [w], [ca.horzcat(*outputs)])
         self.f_Jrunning = ca.Function('f_Jrunning', [w], [J_running])
         self.f_Jfix = ca.Function('f_Jfix', [w], [J_fix])
-        self.f_Jreg = ca.Function('f_Jreg', [w], [J_reg])
+        self.f_Jreg = ca.Function('f_Jreg', [w], [J_reg*1E6])
