@@ -26,8 +26,6 @@ latexify()
 results = []
 sce = 10
 for i in range(sce):
-    if i == 2:
-        continue  # Skip results_2
     results_i = Results.fromFile(f'results/dietenbach_average_varyPrice_{i}.npz')
     results_i.printAll()
     results.append(results_i)
@@ -57,7 +55,7 @@ for result in results:
     J_total_values.append(J_fix + J_running_sum)
     P_hp_values.append(P_hp.sum() *4)
 
-P_load = [32 * 1e9] * (sce-1)
+P_load = [32 * 1e9] * (sce)
 P_load_sum = np.array(P_load)
 P_hp_sum = np.array(P_hp_values)
 
@@ -92,4 +90,57 @@ plt.xscale('log')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
+# %% Plot the base scenario
+import pandas as pd
+
+# Load data
+data = pd.read_csv('data/data_dietenbach.csv')
+T_amb = data['T_amb'][::4]
+T_hp = 86 + 273.15
+COP = 0.5 * T_hp / (T_hp - T_amb)
+P_hp_base = result_2['Qdot_load'] / COP
+P_hp_base_sum = P_hp_base.sum() * 4
+P_load_base = result_2['P_hh'].sum() * 4
+power_usage = (P_load_base + P_hp_base_sum) * 30
+
+# Calculate total_cost_base for different values of c_el
+c_el_values = np.linspace(0.1, 1.0, 10)
+total_cost_base = []
+
+for c_el in c_el_values:
+    total_cost = power_usage * c_el / 1000 # Calculate total cost in M EUR
+    total_cost_base.append(total_cost)
+total_cost_base = np.array(total_cost_base) + 10* 1e6
+# Assuming J_total_values is already calculated
+# J_total_values should be a list or array of the same length as c_el_values
+
+
+# Plotting
+plt.figure(figsize=(7, 4))
+plt.plot(c_el_values, total_cost_base / 1e6, marker='o', linestyle='-', color='b', label='Only Heat Pump')
+plt.plot(c_el_values, J_total_values / 1e6, marker='x', linestyle='--', color='r', label='Full Model')
+plt.xlabel('Electricity Price (EUR/kWh)')
+plt.ylabel('Total Cost for 30 years (M EUR)')
+# plt.yscale('log')  # Set y-axis to logarithmic scale
+
+# Highlight the value of 0.3 on the x-axis
+highlight_x = 0.3
+plt.axvline(x=highlight_x, color='g', linestyle='--', linewidth=1)
+
+# Find the corresponding y-values for the highlight_x
+highlight_y1 = np.interp(highlight_x, c_el_values, total_cost_base / 1e6)
+highlight_y2 = np.interp(highlight_x, c_el_values, J_total_values / 1e6)
+
+# Draw circles around the points at x=0.3
+plt.scatter([highlight_x], [highlight_y1], color='g', s=100, facecolors='none', edgecolors='g')
+plt.scatter([highlight_x], [highlight_y2], color='g', s=100, facecolors='none', edgecolors='g')
+
+plt.legend()
+plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+plt.tight_layout()
+plt.savefig('cost_comparison.pdf')
+plt.show()
+
 # %%

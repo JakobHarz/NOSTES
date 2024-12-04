@@ -163,3 +163,53 @@ plt.grid(alpha=0.25)
 plt.tight_layout()
 # plt.savefig('org_avg.pdf')
 plt.show()
+
+
+
+
+# %%
+import matplotlib.dates as mdates
+
+# Assuming time_values is a numpy array representing the time in hours
+time_values = results_average['timegrid']
+Qdot_load = results_average['Qdot_load']
+P_load = results_average['P_hh']
+
+# Calculate weekly averages
+def calculate_weekly_average(data, time_values):
+    weeks = np.unique(time_values // (24 * 7))  # Find unique weeks
+    weekly_avg = []
+    for week in weeks:
+        mask = (time_values // (24 * 7)) == week
+        weekly_avg.append(np.mean(data[mask]))
+    return weeks, np.array(weekly_avg)
+
+# Calculate weekly averages for Qdot_load and P_load
+weeks, Qdot_load_weekly = calculate_weekly_average(Qdot_load, time_values)
+_, P_load_weekly = calculate_weekly_average(P_load, time_values)
+
+# Convert weeks to time format for plotting
+time_week = np.append(weeks * 7, (weeks[-1] + 1) * 7)  # Convert weeks to days and add an extra element
+
+# Plot the data using stairs
+plt.figure(figsize=(7, 4))
+plt.stairs(P_load_weekly / 1e6, time_week, label='Electricity Demand (MW, weekly average)', alpha=1)
+plt.stairs(Qdot_load_weekly / 1e6, time_week, label='Heat Demand (MW, weekly average)', alpha=1, color='r')
+
+
+# Formatting the x-axis to show abbreviated month names
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # '%b' for abbreviated month names
+
+# Optionally set the locator to show ticks at the start of each month
+plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+
+# Rotate the x-axis labels if needed for better readability
+plt.gcf().autofmt_xdate()
+
+plt.ylabel('Power (MW)')
+plt.legend(loc='lower left')
+plt.grid(True, alpha=0.25)
+plt.tight_layout()
+plt.savefig('weekly_loads.pdf')
+plt.show()
+# %%

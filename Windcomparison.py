@@ -22,11 +22,15 @@ def latexify():
 latexify()
 
 # load average results
-results_average = Results.fromFile('results/dietenbach_average.npz')
+results_average = Results.fromFile('results/dietenbach_average_varyPrice_2.npz')
 results_nowind = Results.fromFile('results/dietenbach_average_nowind.npz')
-results_nowind.printSizings(comparewith=results_average)
-results_nowind.printNLPStats(comparewith=results_average)
-results_nowind.printCosts(comparewith=results_average)
+results_average.printSizings(comparewith=results_nowind)
+results_average.printNLPStats(comparewith=results_nowind)
+results_average.printCosts(comparewith=results_nowind)
+
+# results_nowind.printSizings(comparewith=results_average)
+# results_nowind.printNLPStats(comparewith=results_average)
+# results_nowind.printCosts(comparewith=results_average)
 
 def mean_absolute_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100

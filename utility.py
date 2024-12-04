@@ -32,7 +32,7 @@ class Constants:
 
     # ---- PRICING ----
     price_sell = -0.05  # EUR/kWh
-    price_buy = 0.4  # EUR/kWh
+    price_buy = 0.3  # EUR/kWh
 
     # --- stuff ---
     n_years = 30  # Number of years the system is running

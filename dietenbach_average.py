@@ -31,18 +31,20 @@ constants = Constants()
 
 # constants.price_buy = 0.1 + 0.1 * 2
 systemmodel = AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
-# nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
-# res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
+systemmodel.lbp[:] = 0.1
+systemmodel.ubp[:] = 5
+
+nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
+res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
 # res.save(f'results/dietenbach_average_varyPrice_{2}.npz')
 
-systemmodel.lbp[:] = 0.1
-systemmodel.ubp[:] = 10
-systemmodel.lbp[3] = 0
-systemmodel.ubp[3] = 0
 
-nlp = AverageSTESNLP(systemmodel, data, N = 365*12)
-res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
-res.save('results/dietenbach_average_nowind.npz')
+# systemmodel.lbp[3] = 0
+# systemmodel.ubp[3] = 0
+
+# nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
+# res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
+# res.save('results/dietenbach_average.npz')
 
 
 
