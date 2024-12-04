@@ -132,7 +132,10 @@ class STESNLP:
         w_scaled = self.w # these are now the SCALED variables
         scaling_weights = self.w(1)
         scaling_weights['p_fix'] = 1E-3
-        scaling_weights['X_sto'] = 100
+        if 'X' in self.w.keys():
+            scaling_weights['X',:,:-1] = 100
+        if 'X_sto' in self.w.keys():
+            scaling_weights['X_sto'] = 100
         scaling_weights['U'] = 1E6
         W_scale = ca.diag(scaling_weights)
         # TODO: specify weight for X,U, p_fix
