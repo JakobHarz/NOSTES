@@ -5,7 +5,8 @@ import numpy as np
 from systemmodels.systemModel import SystemModel, Data
 from utility import Constants, NumpyStruct, Results
 import casadi as ca
-from casadi.tools import struct_symSX, entry
+from casadi.tools import struct_symSX, entry, struct_SX
+
 
 class STESNLP:
     def __init__(self, system: SystemModel, data: Data, N=365 * 24):
@@ -52,7 +53,7 @@ class STESNLP:
         w0['U', :, 1] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)
         w0['U', :, 2] = ca.horzsplit((p_data_n[3, :] - p_data_n[1, :] - p_data_n[2, :]) / 3)  # P_load - P_pv - P_wind
 
-        # create the upper and lower bounds for the variables
+        # create the upper and lower bounds for the variables (scaling will be done later)
         lbw = w(-ca.inf)
         ubw = w(ca.inf)
 
@@ -123,11 +124,34 @@ class STESNLP:
 
     def solve(self, additional_options: dict = {}) -> Results:
 
+        # build some functions for the scaled lbw, ubw, (G,lbG, ubG stay unscaled)
+        f_J = ca.Function('f_J', [self.w], [self.J])
+        f_G = ca.Function('f_G', [self.w], [self.G])
+
+        # scaling of the variables
+        w_scaled = self.w # these are now the SCALED variables
+        scaling_weights = self.w(1)
+        scaling_weights['p_fix'] = 1E-3
+        scaling_weights['X_sto'] = 100
+        scaling_weights['U'] = 1E6
+        W_scale = ca.diag(scaling_weights)
+        # TODO: specify weight for X,U, p_fix
+
+        # these are now the UNSCALED variables
+        w_unscaled = struct_SX(w_scaled, data=W_scale@w_scaled)
+
+        # the scaled bounds, initial values
+        w0_scaled = ca.inv(W_scale)@self.w0
+        lbw_scaled= ca.inv(W_scale)@self.lbw
+        ubw_scaled = ca.inv(W_scale)@self.ubw
+        G_unscaled = f_G(w_unscaled)
+        J_unscaled = f_J(w_unscaled)
+
         print('Building NLP')
         # create the nlp
-        nlp = {'x': self.w.cat,
-               'f': self.J,
-               'g': self.G}
+        nlp = {'x': w_scaled,
+               'f': J_unscaled,
+               'g': G_unscaled}
 
         # create the solver
         opts = {'ipopt.max_iter': 0, 'ipopt.linear_solver': 'ma97'}
@@ -137,8 +161,11 @@ class STESNLP:
 
         print('Solving NLP')
         # solve the nlp
-        res = solver(x0=self.w0, lbx=self.lbw, ubx=self.ubw, lbg=self.lbG, ubg=self.ubG)
+        res = solver(x0=w0_scaled, lbx=lbw_scaled, ubx=ubw_scaled, lbg=self.lbG, ubg=self.ubG)
         wopt = self.w(res['x'])
+
+        # revert the scaling
+        wopt = self.w(W_scale@wopt)
 
         # process the results into a single dictionary
         results = self.processOutput(wopt, solver.stats())
