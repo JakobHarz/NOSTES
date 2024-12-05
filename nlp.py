@@ -48,7 +48,7 @@ class STESNLP:
         w0['U', :, 0] = 3e6
         w0['U', :, 1] = 0
         w0['U', :, 2] = 0
-        w0['p_fix'] = [1, 1, 1, 1, 20]
+        w0['p_fix'] = [1, 1, 1, 1, 1]
         w0['U', :, 0] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)  # P_pv + P_wind - P_load
         w0['U', :, 1] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)
         w0['U', :, 2] = ca.horzsplit((p_data_n[3, :] - p_data_n[1, :] - p_data_n[2, :]) / 3)  # P_load - P_pv - P_wind
@@ -136,9 +136,8 @@ class STESNLP:
             scaling_weights['X',:,:-1] = 100
         if 'X_sto' in self.w.keys():
             scaling_weights['X_sto'] = 100
-        scaling_weights['U'] = 1E6
+        scaling_weights['U'] = 1E6  # todo: scale based on data
         W_scale = ca.diag(scaling_weights)
-        # TODO: specify weight for X,U, p_fix
 
         # these are now the UNSCALED variables
         w_unscaled = struct_SX(w_scaled, data=W_scale@w_scaled)
