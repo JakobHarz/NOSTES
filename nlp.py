@@ -156,7 +156,7 @@ class STESNLP:
                'g': G_unscaled}
 
         # create the solver
-        opts = {'ipopt.max_iter': 0, 'ipopt.linear_solver': 'ma97'}
+        opts = {'ipopt.max_iter': 2000, 'ipopt.linear_solver': 'mumps'}
         opts.update(additional_options)
 
         solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
