@@ -52,9 +52,9 @@ class AverageSTESNLP(STESNLP):
         w0['U', :, 1] = 0
         w0['U', :, 2] = 0
         w0['p_fix'] = [1, 1, 1, 1, 1]
-        w0['U', :, 0] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)  # P_pv + P_wind - P_load
-        w0['U', :, 1] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)
-        w0['U', :, 2] = ca.horzsplit((p_data_n[3, :] - p_data_n[1, :] - p_data_n[2, :]) / 3)  # P_load - P_pv - P_wind
+        # w0['U', :, 0] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)  # P_pv + P_wind - P_load
+        # w0['U', :, 1] = ca.horzsplit((p_data_n[1, :] + p_data_n[2, :] - p_data_n[3, :]) / 3)
+        # w0['U', :, 2] = ca.horzsplit((p_data_n[3, :] - p_data_n[1, :] - p_data_n[2, :]) / 3)  # P_load - P_pv - P_wind
 
         # no wind
         # w0['p_fix'] = [2, 1.5, 2, 0, 2]
