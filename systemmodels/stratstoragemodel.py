@@ -74,7 +74,7 @@ class StratStorageModel(SystemModel):
 
         self.f = ca.Function('f', [self.x, self.u, self.p_fix, self.p_data], [ODE], ['x', 'u', 'p_fix', 'p_data'], ['xdot'])
 
-        x0list = [273.15 + 30 + i * 10 for i in range(self.s_n)] + self.g_n * [15 + 273.15] + [0.5]
+        x0list = [273.15 + 50]*self.s_n + self.g_n * [13.5 + 273.15] + [0.5]
         self.x0 = ca.vertcat(*x0list)
         assert self.x0.shape == self.x.shape
 
@@ -89,7 +89,7 @@ class StratStorageModel(SystemModel):
         self.const_bat1 = self.u[1] - self.C_bat/4
         self.const_bat2 = self.u[2] - self.C_bat/4
         self.const_hp = Qdot_hp - self.C_hp  # W
-        self.const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
+        # self.const_mdot_hp = self.mdot_hp - self.constants.mdot_hp_max
 
 
         g_vec = ca.vertcat(self.const_bat1,
