@@ -22,15 +22,11 @@ def latexify():
 latexify()
 
 # load average results
-results_average = Results.fromFile('results/dietenbach_average_varyPrice_2.npz')
+results_average = Results.fromFile('results/dietenbach_average.npz')
 results_nowind = Results.fromFile('results/dietenbach_average_nowind.npz')
 results_average.printSizings(comparewith=results_nowind)
 results_average.printNLPStats(comparewith=results_nowind)
-results_average.printCosts(comparewith=results_nowind)
-
-# results_nowind.printSizings(comparewith=results_average)
-# results_nowind.printNLPStats(comparewith=results_average)
-# results_nowind.printCosts(comparewith=results_average)
+# results_average.printCosts(comparewith=results_nowind)
 
 def mean_absolute_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
@@ -119,13 +115,13 @@ for result in results:
     P_hp = result['P_hp']
 
     P_grid_positive = P_grid[P_grid > 0]
-    P_grid_sum = P_grid_positive.sum() *4
-    J_running_sum = J_running.sum() * 4
+    P_grid_sum = P_grid_positive.sum()
+    J_running_sum = J_running.sum() 
     
     # Append the values to the lists
     P_grid_values.append(P_grid_sum)
     J_total_values.append(J_fix + J_running_sum)
-    P_hp_values.append(P_hp.sum()*4)
+    P_hp_values.append(P_hp.sum())
 
 P_load = [32 * 1e9] * 2
 P_load_sum = np.array(P_load)

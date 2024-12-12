@@ -24,50 +24,47 @@ constants = Constants()
 #     # systemmodel.lbu[1:3] = 0
 #     # systemmodel.ubu[1:3] = 0
 
-#     nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
-#     res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
+#     nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
+#     res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma27'})
 
 #     res.save(f'results/dietenbach_average_varyPrice_{i}.npz')
 
 # constants.price_buy = 0.1 + 0.1 * 2
 systemmodel = AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
 systemmodel.lbp[:] = 0.1
-systemmodel.ubp[:] = 5
-
-nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
-res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
-# res.save(f'results/dietenbach_average_varyPrice_{2}.npz')
-
-
+systemmodel.ubp[:] = 10
 # systemmodel.lbp[3] = 0
 # systemmodel.ubp[3] = 0
 
-# nlp = AverageSTESNLP(systemmodel, data, N = 365*6)
-# res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma97'})
-# res.save('results/dietenbach_average.npz')
+nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
+res = nlp.solve({'ipopt.max_iter': 1000, 'ipopt.linear_solver': 'ma27'})
+res.save('results/dietenbach_average.npz')
 
 
 
-# %% Make some plots
-plt.figure(figsize=(15,9))
-for ind_x in range(res['nx']):
-    ubx, lbx = float(res['ubx'][ind_x]), float(res['lbx'][ind_x])
-    if res['statenames'][ind_x].startswith('T'):
-        plt.subplot(2, 1, 1)
-        plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}--', label=res['statenames'][ind_x])
-        plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}-', label=res['statenames'][ind_x])
-        plt.axhline(ubx - 273.15, color='grey', linestyle='--')
-        plt.axhline(lbx - 273.15, color='grey', linestyle='--')
-    else:
-        plt.subplot(2,1,2)
-        plt.plot(res.timegrid, res['X'][:, ind_x], label=res['statenames'][ind_x])
-        plt.axhline(ubx, color='grey', linestyle='--')
-        plt.axhline(lbx, color='grey', linestyle='--')
-plt.subplot(2, 1, 1)
-plt.legend()
-plt.grid(alpha=0.25)
-plt.subplot(2, 1, 2)
-plt.legend()
-plt.grid(alpha=0.25)
-plt.tight_layout()
-plt.show()
+
+
+
+# # %% Make some plots
+# plt.figure(figsize=(15,9))
+# for ind_x in range(res['nx']):
+#     ubx, lbx = float(res['ubx'][ind_x]), float(res['lbx'][ind_x])
+#     if res['statenames'][ind_x].startswith('T'):
+#         plt.subplot(2, 1, 1)
+#         plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}--', label=res['statenames'][ind_x])
+#         plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}-', label=res['statenames'][ind_x])
+#         plt.axhline(ubx - 273.15, color='grey', linestyle='--')
+#         plt.axhline(lbx - 273.15, color='grey', linestyle='--')
+#     else:
+#         plt.subplot(2,1,2)
+#         plt.plot(res.timegrid, res['X'][:, ind_x], label=res['statenames'][ind_x])
+#         plt.axhline(ubx, color='grey', linestyle='--')
+#         plt.axhline(lbx, color='grey', linestyle='--')
+# plt.subplot(2, 1, 1)
+# plt.legend()
+# plt.grid(alpha=0.25)
+# plt.subplot(2, 1, 2)
+# plt.legend()
+# plt.grid(alpha=0.25)
+# plt.tight_layout()
+# plt.show()

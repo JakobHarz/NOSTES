@@ -32,6 +32,7 @@ class Constants:
 
     # ---- PRICING ----
     price_sell = -0.05  # EUR/kWh
+    #price_sell = 0
     price_buy = 0.3  # EUR/kWh
 
     # --- stuff ---
@@ -42,7 +43,7 @@ class Constants:
     C_bat_default = 2E7 # Wh
     C_hp_default = 2E7 # W (thermal)
     C_wind_default = 7.14 * 5 * 1e6 # Wp
-    C_pv_default =  34.69 * 1e6 # Wp
+    C_pv_default =  34.69 * 1e6 # Wp (Use instead of 20% rather 18% efficiency)
 
 
 
@@ -53,13 +54,16 @@ class Constants:
 
     def investment(self):
         # Dollar to Euro 
-        Dollar_to_Euro = 0.9
+        Dollar_to_Euro = 0.92
 
         I_hp = 0.375  # EUR/W
         I_s = 30  # EUR/m^3
-        I_pv = 1.491 * 0.9  # EUR/Wp
+        I_pv = 1.491 * Dollar_to_Euro  # EUR/Wp
+        # I_pv = 0.8
         I_wind = 1.569 * Dollar_to_Euro  # EUR/Wp
+        #I_wind = 1.6
         I_bat = 0.476 * Dollar_to_Euro  # EUR/Wh
+        #I_bat = 0.5
         # OPEX_pv = 21 * 0.9 / 1e3 
         # OPEX_wind = 31 * 0.9 / 1e3
         # OPEX_battery = 39 * 0.9 /1e3 
