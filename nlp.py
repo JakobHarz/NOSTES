@@ -1,9 +1,6 @@
-from typing import Union, List
-
 import numpy as np
-
 from systemmodels.systemModel import SystemModel, Data
-from utility import Constants, NumpyStruct, Results
+from utility import Constants, Results
 import casadi as ca
 from casadi.tools import struct_symSX, entry, struct_SX
 
@@ -180,7 +177,7 @@ class STESNLP:
         """
 
         # get the optimal outputs
-        rawOutputs = NumpyStruct(self.system.outputStruct.repeated(self.f_outputs(wopt)))
+        rawOutputs = self.system.outputStruct.repeated(self.f_outputs(wopt))
 
         # empty results dictionary
         results = Results()
@@ -211,7 +208,7 @@ class STESNLP:
 
         # get the other outputs
         for key, subdict in self.system.outputs.items():
-            values = rawOutputs[:, key]
+            values = np.array(rawOutputs[:, key]).squeeze()
 
             # check if all the values in the first dimension are the same
             if subdict['type'] == 'single':

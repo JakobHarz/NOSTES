@@ -2,7 +2,7 @@ import numpy as np
 
 from systemmodels.averagedstratstoragemodel import AveragedStratStorageModel
 from systemmodels.systemModel import SystemModel, Data
-from utility import Constants, NumpyStruct
+from utility import Constants
 from nlp import STESNLP
 import casadi as ca
 from casadi.tools import struct_symSX, entry
