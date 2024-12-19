@@ -282,7 +282,7 @@ for ind_x in range(results_average['nx']):
 
 plt.legend(loc='lower right', bbox_to_anchor=(0.95, 0.05), ncols=6)
 plt.ylabel(r'$T$ [°C]')
-plt.xlabel('Month')
+#plt.xlabel('Month')
 
 # Formatting the x-axis to show abbreviated month names
 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # '%b' for abbreviated month names
@@ -294,6 +294,40 @@ plt.gcf().autofmt_xdate()
 plt.grid(alpha=0.25)
 plt.tight_layout()
 plt.savefig('org.pdf')
+plt.show()
+
+#%% for graphical abstract
+plt.figure(figsize=(12, 5))
+mape_values = []
+
+for ind_x in range(results_average['nx']):
+    ubx, lbx = float(results_average['ubx'][ind_x]), float(results_average['lbx'][ind_x])
+    if ind_x in state_labels:
+        # Change labels for the original results
+        label_org = f"{state_labels[ind_x]}"
+        plt.plot(results_average.timegrid / 24, results_average.X[:, ind_x] - 273.15, f'C{ind_x}')
+        # plt.axhline(ubx - 273.15, color='grey', linestyle='--', linewidth=1)
+        # plt.axhline(lbx - 273.15, color='grey', linestyle='--', linewidth=1)
+
+#plt.legend(loc='lower right', bbox_to_anchor=(0.95, 0.05), ncols=6)
+#plt.ylabel(r'$T$ [°C]')
+#plt.xlabel('Month')
+
+# Formatting the x-axis to show abbreviated month names
+#plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # '%b' for abbreviated month names
+# Optionally set the locator to show ticks at the start of each month
+#plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+
+# Rotate the x-axis labels if needed for better readability
+#plt.gcf().autofmt_xdate()
+#plt.grid(alpha=0.25)
+
+# Remove x and y axis numbers
+plt.gca().set_xticklabels([])
+plt.gca().set_yticklabels([])
+
+plt.tight_layout()
+#plt.savefig('org.png')
 plt.show()
 
 #%%
@@ -319,7 +353,7 @@ for ind_x in range(results_average['nx']):
         ax.plot(results_average.timegrid / 24, results_average.X[:, ind_x] - 273.15, f'C{ind_x}--', linewidth=0.5, alpha = 0.5)
         ax.plot(results_normal.timegrid / 24, results_normal.X[:, ind_x] - 273.15, f'C{ind_x}-', label=label_org, linewidth=0.5, alpha = 0.5)
         ax.axhline(ubx - 273.15, color='grey', linestyle='--', linewidth=1)
-        # ax.axhline(lbx - 273.15, color='grey', linestyle='--', linewidth=1)
+        ax.axhline(lbx - 273.15, color='grey', linestyle='--', linewidth=1)
 
     # Calculate MAPE for the current state variable
     mape = mean_absolute_percentage_error(results_average.X[:, ind_x], results_normal.X[:, ind_x])

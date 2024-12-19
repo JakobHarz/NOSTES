@@ -31,7 +31,7 @@ class Constants:
     mdot_hp_max = 700  # [kg/s] Maximum mass flow rate of the heat pump
 
     # ---- PRICING ----
-    price_sell = -0.05  # EUR/kWh
+    price_sell = -0.01  # EUR/kWh
     #price_sell = 0
     price_buy = 0.3  # EUR/kWh
 
@@ -42,8 +42,8 @@ class Constants:
     # ---- Default Scaling of size params ----
     C_bat_default = 2E7 # Wh
     C_hp_default = 2E7 # W (thermal)
-    C_wind_default = 7.14 * 5 * 1e6 # Wp
-    C_pv_default =  34.69 * 1e6 # Wp (Use instead of 20% rather 18% efficiency)
+    C_wind_default = 11.2 * 1e6 # Wp (use 5.6MW two wind turbine, including wake effect)
+    C_pv_default =  18.56 * 1e6 # Wp (23.2% efficiency, yield 232Wp/m^2, use 80*1e3 modules of 600Wp)
 
 
 
@@ -59,7 +59,7 @@ class Constants:
         I_hp = 0.375  # EUR/W
         I_s = 30  # EUR/m^3
         I_pv = 1.491 * Dollar_to_Euro  # EUR/Wp
-        # I_pv = 0.8
+        #I_pv = 0.8
         I_wind = 1.569 * Dollar_to_Euro  # EUR/Wp
         #I_wind = 1.6
         I_bat = 0.476 * Dollar_to_Euro  # EUR/Wh
