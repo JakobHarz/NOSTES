@@ -126,8 +126,8 @@ time_week = np.append(weeks * 7, (weeks[-1] + 1) * 7)  # Convert weeks to days a
 
 # Plot the data using stairs
 plt.figure(figsize=(9, 5))
-plt.stairs(P_hp_weekly / 1e6, time_week, label='Full Model (MW, weekly average)', alpha=1)
-plt.stairs(P_hp_base_weekly / 1e6, time_week, label='Only Heat Pump (MW, weekly average)', alpha=1, color='r')
+plt.stairs(P_hp_weekly / 1e6, time_week, label='Full Model (weekly average)', alpha=1)
+plt.stairs(P_hp_base_weekly / 1e6, time_week, label='Only Heat Pump (weekly average)', alpha=1, color='r')
 
 # Formatting the x-axis to show abbreviated month names
 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # '%b' for abbreviated month names
@@ -190,8 +190,8 @@ total_cost_base = np.array(total_cost_base) + 10* 1e6
 # %%
 # Plotting
 plt.figure(figsize=(9, 5))
-plt.plot(c_el_values, total_cost_base / 1e6, linestyle='-', color='C0', label='Only Heat Pump')
-plt.plot(c_el_values, J_total_values / 1e6, marker='o', linestyle='-', color='C1', label='Full Model')
+plt.plot(c_el_values, total_cost_base / 1e6, linestyle='-', color='r', label='Only Heat Pump')
+plt.plot(c_el_values, J_total_values / 1e6, marker='o', linestyle='-', color='C0', label='Full Model')
 plt.xlabel('Electricity Price (\euro/kWh)')
 plt.ylabel('Total Cost for 30 years (M\euro)')
 plt.ylim([100, 1000])

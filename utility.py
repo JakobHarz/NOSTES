@@ -30,8 +30,9 @@ class Constants:
     T_hp = 86 + 273.15  # [K] Temperature of the heat pump
     mdot_hp_max = 700  # [kg/s] Maximum mass flow rate of the heat pump
 
-    # ---- PRICING & Investment Costs----
-    price_sell = -0.05  # EUR/kWh
+    # ---- PRICING ----
+    price_sell = -0.01  # EUR/kWh
+    #price_sell = 0
     price_buy = 0.3  # EUR/kWh
     DOLLAR_TO_EURO = 0.92
     I_hp = 0.375  # EUR/W
