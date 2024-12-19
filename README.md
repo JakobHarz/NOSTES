@@ -1,4 +1,6 @@
-# STESBox
+# STESBox: 
+
+A mini toolbox to compute optimal design parameters and controls for a
 
 
 

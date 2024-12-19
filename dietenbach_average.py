@@ -1,70 +1,35 @@
-from matplotlib import pyplot as plt
-
 from systemmodels.averagedstratstoragemodel import AveragedStratStorageModel
-from systemmodels.systemModel import Data
 from nlpAverage import AverageSTESNLP
-from utility import Constants
+from utility import Constants, Data
 
+# the user has to provide data,
+# The provided data file should have the following columns:
+#         - T_amb: ambient temperature [K (!)]
+#         - P_pv: power of the pv [W], of the installed capacity defined below
+#         - P_wind: power of the wind [W], of the installed capacity defined below
+#         - P_load: electric household power demand [W]
+#         - Qdot_load: heat demand of the household [W]
 data = Data('data/data_dietenbach.csv')
+
+# default constants, can be overwritten by the user
 constants = Constants()
 
+# the user has to provide rough guesses for the sizes of the components,
+# for PV and WIND these correspond to the installed capacity that generated the data.
+constants.C_bat_default = 2E7  # Wh
+constants.C_hp_default = 2E7  # W (thermal)
+constants.C_wind_default = 7.14 * 5 * 1e6  # Wp
+constants.C_pv_default = 34.69 * 1e6  # Wp (Use instead of 20% rather 18% efficiency)
 
-# # # Different Electricity price scenarios
-# for i in range(10):
-#     constants.price_buy = 0.1 + 0.1 * i
-#     systemmodel =  AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
+# build the system model
+systemmodel = AveragedStratStorageModel(2, 2, 2, data=data, constants=constants)
 
-#     systemmodel.lbp[:] = 0.1
-#     systemmodel.ubp[:] = 10
+# build the NLP
+nlp = AverageSTESNLP(systemmodel, data, N=365 * 6)
 
-#     # systemmodel.lbp[3] = 0
-#     # systemmodel.ubp[3] = 0
-
-#     # turn off battery
-#     # systemmodel.lbu[1:3] = 0
-#     # systemmodel.ubu[1:3] = 0
-
-#     nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
-#     res = nlp.solve({'ipopt.max_iter': 2000,'ipopt.linear_solver': 'ma27'})
-
-#     res.save(f'results/dietenbach_average_varyPrice_{i}.npz')
-
-# constants.price_buy = 0.1 + 0.1 * 2
-systemmodel = AveragedStratStorageModel(4, 2, 2, data = data, constants=constants)
-systemmodel.lbp[:] = 0.1
-systemmodel.ubp[:] = 10
-# systemmodel.lbp[3] = 0
-# systemmodel.ubp[3] = 0
-
-nlp = AverageSTESNLP(systemmodel, data, N = 365*24)
+# solve the NLP and save the results
 res = nlp.solve({'ipopt.max_iter': 1000, 'ipopt.linear_solver': 'ma27'})
 res.save('results/dietenbach_average.npz')
 
-
-
-
-
-
-# # %% Make some plots
-# plt.figure(figsize=(15,9))
-# for ind_x in range(res['nx']):
-#     ubx, lbx = float(res['ubx'][ind_x]), float(res['lbx'][ind_x])
-#     if res['statenames'][ind_x].startswith('T'):
-#         plt.subplot(2, 1, 1)
-#         plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}--', label=res['statenames'][ind_x])
-#         plt.plot(res.timegrid, res.X[:, ind_x] - 273.15, f'C{ind_x}-', label=res['statenames'][ind_x])
-#         plt.axhline(ubx - 273.15, color='grey', linestyle='--')
-#         plt.axhline(lbx - 273.15, color='grey', linestyle='--')
-#     else:
-#         plt.subplot(2,1,2)
-#         plt.plot(res.timegrid, res['X'][:, ind_x], label=res['statenames'][ind_x])
-#         plt.axhline(ubx, color='grey', linestyle='--')
-#         plt.axhline(lbx, color='grey', linestyle='--')
-# plt.subplot(2, 1, 1)
-# plt.legend()
-# plt.grid(alpha=0.25)
-# plt.subplot(2, 1, 2)
-# plt.legend()
-# plt.grid(alpha=0.25)
-# plt.tight_layout()
-# plt.show()
+print("\nOptimal Sizings:\n"+ "-"*20)
+res.printSizings()

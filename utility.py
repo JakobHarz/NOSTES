@@ -1,6 +1,8 @@
 from typing import List, Union
 import numpy as np
+import pandas as pd
 from tabulate import tabulate
+
 
 class Constants:
     rho = 1000  # [kg/m^3] Density of water
@@ -28,44 +30,30 @@ class Constants:
     T_hp = 86 + 273.15  # [K] Temperature of the heat pump
     mdot_hp_max = 700  # [kg/s] Maximum mass flow rate of the heat pump
 
-    # ---- PRICING ----
+    # ---- PRICING & Investment Costs----
     price_sell = -0.05  # EUR/kWh
-    #price_sell = 0
     price_buy = 0.3  # EUR/kWh
+    DOLLAR_TO_EURO = 0.92
+    I_hp = 0.375  # EUR/W
+    I_s = 30  # EUR/m^3
+    I_pv = 1.491 * DOLLAR_TO_EURO  # EUR/Wp
+    I_wind = 1.569 * DOLLAR_TO_EURO  # EUR/Wp
+    I_bat = 0.476 * DOLLAR_TO_EURO  # EUR/Wh
 
     # --- stuff ---
     n_years = 30  # Number of years the system is running
-    annuity = 0.04 # Annuity rate
+    annuity = 0.04  # Annuity rate
 
-    # ---- Default Scaling of size params ----
-    C_bat_default = 2E7 # Wh
-    C_hp_default = 2E7 # W (thermal)
-    C_wind_default = 7.14 * 5 * 1e6 # Wp
-    C_pv_default =  34.69 * 1e6 # Wp (Use instead of 20% rather 18% efficiency)
+    # ---- Default Scaling of size params, HAS TO BE SET BY THE USER ----
+    C_bat_default = None  # Wh
+    C_hp_default = None  # W (thermal)
+    C_wind_default = None  # Wp
+    C_pv_default = None  # Wp (Use instead of 20% rather 18% efficiency)
 
+    # --- Battery Parameters ---
+    eta_ch = 0.95 # Charging efficiency
+    eta_dis = 0.95  # Discharging efficiency
 
-
-    def battery_params(self):
-        eta_ch = 0.95
-        eta_dis = 0.95  # Discharging efficiency
-        return eta_ch, eta_dis
-
-    def investment(self):
-        # Dollar to Euro 
-        Dollar_to_Euro = 0.92
-
-        I_hp = 0.375  # EUR/W
-        I_s = 30  # EUR/m^3
-        I_pv = 1.491 * Dollar_to_Euro  # EUR/Wp
-        # I_pv = 0.8
-        I_wind = 1.569 * Dollar_to_Euro  # EUR/Wp
-        #I_wind = 1.6
-        I_bat = 0.476 * Dollar_to_Euro  # EUR/Wh
-        #I_bat = 0.5
-        # OPEX_pv = 21 * 0.9 / 1e3 
-        # OPEX_wind = 31 * 0.9 / 1e3
-        # OPEX_battery = 39 * 0.9 /1e3 
-        return I_hp, I_s, I_pv, I_wind, I_bat
 
     def strat_storage(self):
         # Store the params for different layers of the storage
@@ -93,13 +81,13 @@ class Constants:
 
 
 class Results:
-
-    """ A class to store the results of the optimization problem, including the optimal trajectories, the optimal parameters.
+    """ A class to store the results of the optimization problem,
+     including the optimal trajectories, the optimal parameters ...
     Also includes stats from the NLP solver, sizing, cost function values etc.
 
-    Can be saved and loaded from a file.
+    Can be saved and loaded from a file using .save() and .fromFile().
 
-    use results.printAll() to print an overview in the console.
+    Use results.printAll() to print an overview in the console.
 
     """
 
@@ -139,14 +127,8 @@ class Results:
     def units(self) -> dict:
         return self._unitDict
 
-    def __getitem__(self, item):
-        return self._valueDict[item]
-
-    def __setitem__(self, key, value):
-        self.addResult(key, value)
-
-    def addResult(self, name:str, value, unit: Union[str,List[str]] = None, description:str = None):
-
+    def addResult(self, name: str, value, unit: Union[str, List[str]] = None, description: str = None):
+        """ Adds a result to the results dictionary, with the given name, value, unit and description."""
         if type(value) is not np.ndarray:
             value = np.array(value)
         self._valueDict[name] = value
@@ -155,13 +137,13 @@ class Results:
             self._unitDict[name] = unit
         else:
             # dont overwrite the unit if it is already set
-            self._unitDict[name] = self._unitDict.get(name,'-')
+            self._unitDict[name] = self._unitDict.get(name, '-')
 
         if description is not None:
             self._descriptionDict[name] = description
         else:
             # dont overwrite the description if it is already set
-            self._descriptionDict[name] = self._descriptionDict.get(name,'-')
+            self._descriptionDict[name] = self._descriptionDict.get(name, '-')
 
         if name not in self.keys:
             self.keys.append(name)
@@ -170,7 +152,7 @@ class Results:
         if hasattr(self, name):
             setattr(self, name, value)
 
-    def save(self,filename):
+    def save(self, filename):
         # dumps the object into a npz file
         outdict = {}
         for name in self.keys:
@@ -182,22 +164,24 @@ class Results:
         # make sure that the filename ends with .npz
         if not filename.endswith('.npz'):
             filename += '.npz'
-        np.savez(filename, **outdict, names = self.keys)
+        np.savez(filename, **outdict, names=self.keys)
 
     @staticmethod
     def fromFile(filename):
         # loads the object from a npz file
-        inDict = np.load(filename,allow_pickle=False)
+        inDict = np.load(filename, allow_pickle=False)
         res = Results()
         for name in inDict['names']:
-            res.addResult(name, inDict[name + '_value'], str(inDict[name + '_unit']), str(inDict[name + '_description']))
+            res.addResult(name, inDict[name + '_value'], str(inDict[name + '_unit']),
+                          str(inDict[name + '_description']))
         return res
 
     def printAll(self, comparewith: 'Results' = None):
         self.printValues(self.keys, comparewith=comparewith)
 
     def printValues(self, keys: List[str], comparewith: 'Results' = None):
-        # thanks chatgpt
+        """ Print a formatted table with the values of the given keys.
+         A second 'Results' instance can be provided to compare the values side by side."""
         table_data = []
         for key in keys:
             # Truncate entries that exceed max_width
@@ -217,12 +201,30 @@ class Results:
             table_data.append(row_data)
 
         # Print the formatted table
-        headers = ['Key', 'Description', 'Unit','Value']
+        headers = ['Key', 'Description', 'Unit', 'Value']
         colaling = ['left', 'left', 'left', 'right']
         if comparewith is not None:
             headers.append('Value (Comp)')
             colaling.append('right')
-        print(tabulate(table_data, headers=headers, tablefmt='rst',maxcolwidths=50, colalign=colaling))
+        print(tabulate(table_data, headers=headers, tablefmt='rst', maxcolwidths=50, colalign=colaling))
+
+    def printSizings(self, comparewith: 'Results' = None):
+        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
+
+    def printNLPStats(self, comparewith: 'Results' = None):
+        self.printValues(['nlp_w_size', 'solver_iter_count', 'solver_t_wall_total'], comparewith=comparewith)
+
+    def printCosts(self, comparewith: 'Results' = None):
+        self.printValues([key for key in self.keys if key.startswith('cost_')], comparewith=comparewith)
+
+    def __getitem__(self, item):
+        return self._valueDict[item]
+
+    def __setitem__(self, key, value):
+        self.addResult(key, value)
+
+    def __repr__(self):
+        return f"Results Instance, use results.printAll() to print the results."
 
     def _formatValue(self, value: np.ndarray):
         assert type(value) is np.ndarray, "The value should be a numpy array"
@@ -238,7 +240,7 @@ class Results:
                 value_str = value_str[:20] + '...'
             return value_str
 
-    def _formatEngineering(self,value):
+    def _formatEngineering(self, value):
         """ formats the given value in engineering notation"""
 
         exponent = np.floor(np.log10(np.abs(value))) // 3 * 3
@@ -250,11 +252,57 @@ class Results:
 
         return f"{significand:.2f} {exponent_letter}"
 
-    def printSizings(self, comparewith: 'Results' = None):
-        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
 
-    def printNLPStats(self, comparewith: 'Results' = None):
-        self.printValues(['nlp_w_size','solver_iter_count','solver_t_wall_total'], comparewith=comparewith)
+class Data:
+    """ Class to preprocess and store the data for the NLP.
+        The provided data file should have the following columns:
+        - T_amb: ambient temperature [K (!)]
+        - P_pv: power of the pv [W]
+        - P_wind: power of the wind [W]
+        - P_load: electric household power demand [W]
+        - Qdot_load: heat demand of the household [W]
 
-    def printCosts(self, comparewith: 'Results' = None):
-        self.printValues([key for key in self.keys if key.startswith('cost_')], comparewith=comparewith)
+        p_data (5): - T_amb ambient temperature
+                    - P_pv power of the pv
+                    - P_wind power of the wind
+                    - P_load electric household power demand
+                    - Qdot_load heat demand of the household
+    """
+
+    def __init__(self, file_path: str):
+        # Load the data from the file
+        raw_data = pd.read_csv(file_path)
+        assert all([col in raw_data.columns for col in ['T_amb', 'P_pv', 'P_wind', 'P_load', 'Qdot_load']]),\
+            "The data file should have the columns: T_amb, P_pv, P_wind, P_load, Qdot_load"
+
+        # Load the data
+        self.data_T_amb = raw_data['T_amb'].values
+        self.data_P_pv = raw_data['P_pv'].values
+        self.data_P_wind = raw_data['P_wind'].values
+        self.data_P_load = raw_data['P_load'].values
+        self.data_Qdot_load = raw_data['Qdot_load'].values
+
+    def getDataAtTime(self, time: float):
+        """
+        time: time in hours [0, ..., 24*365]
+        """
+        index = int(time)
+        return self.data_T_amb[index], self.data_P_pv[index], self.data_P_wind[index], self.data_P_load[index], self.data_Qdot_load[index]
+
+    def getDataAtTimes(self, start, stop, step):
+        """
+        start: start time in hours
+        stop: stop time in hours
+        step: step size in hours
+        """
+
+        # check that the times are integer
+        # assert np.all(np.mod(times, 1) == 0), "The times should be integers"
+        # indices = times.astype(int)
+
+        indices = np.arange(start, stop, step, dtype=int)
+        return (self.data_T_amb[indices],
+                self.data_P_pv[indices],
+                self.data_P_wind[indices],
+                self.data_P_load[indices],
+                self.data_Qdot_load[indices])

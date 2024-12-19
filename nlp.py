@@ -1,15 +1,15 @@
 import time
-
 import numpy as np
-from systemmodels.systemModel import SystemModel, Data
-from utility import Constants, Results
+from systemmodels.systemModel import SystemModel
+from utility import Constants, Results, Data
 import casadi as ca
 from casadi.tools import struct_symSX, entry, struct_SX
 
 
 class STESNLP:
     def __init__(self, system: SystemModel, data: Data, N=365 * 24):
-
+        """ Base Class that implements the Full NLP.
+         The NLP is built in the build_NLP method, which is overwritten by the child classes."""
         self.system = system
         self.N = N
         self.data = data
@@ -17,13 +17,12 @@ class STESNLP:
         self.build_NLP()
 
     def build_NLP(self):
-        # N = 365 * 24
-        T = 365 * 24
-        h = T / self.N  # [h] step size in hours
+        Tend = 365 * 24
+        h = Tend / self.N  # [h] step size in hours
         h_sec = h * 3600
         N = self.N  # for readability
         self.h = h
-        self.T = T
+        self.Tend = Tend
         self.h_sec = h_sec
 
         self.params = Constants()  # Initialize SystemParameters
@@ -119,7 +118,7 @@ class STESNLP:
         self.f_outputs = ca.Function('f_outputs', [w], [ca.horzcat(*outputs)])
         self.f_Jrunning = ca.Function('f_Jrunning', [w], [J_running])
         self.f_Jfix = ca.Function('f_Jfix', [w], [J_fix])
-        self.f_Jreg = ca.Function('f_Jreg', [w], [J_reg*1E6])
+        self.f_Jreg = ca.Function('f_Jreg', [w], [J_reg * 1E6])
 
     def solve(self, additional_options: dict = {}) -> Results:
 
@@ -127,29 +126,38 @@ class STESNLP:
         f_J = ca.Function('f_J', [self.w], [self.J])
         f_G = ca.Function('f_G', [self.w], [self.G])
 
-        # scaling of the variables
-        w_scaled = self.w # these are now the SCALED variables
+        # ------ scaling of the variables ----
+        w_scaled = self.w  # these are now the SCALED variables
         scaling_weights = self.w(1)
+
+        # the problem is very sensitive to the scaling of the fixed parameters,
+        # this way we hint at the optimizer to thus only change them slowly
         scaling_weights['p_fix'] = 1E-3
+
+        # scaling of the states and controls
         if 'X' in self.w.keys():
-            scaling_weights['X',:,:-1] = 100
+            scaling_weights['X', :, :-1] = 100  # all temperatures are in Kelvin and thus in the order of 100
         if 'X_sto' in self.w.keys():
-            scaling_weights['X_sto'] = 100
-        scaling_weights['U'] = 1E6  # todo: scale based on data
+            scaling_weights['X_sto'] = 100  # all temperatures are in Kelvin and thus in the order of 100
+
+        # scale the controls (Powers) based on a typical power demand
+        scaling_weights['U'] = np.median(self.data.data_P_load)
+
+        # scaling matrix
         W_scale = ca.diag(scaling_weights)
 
         # these are now the UNSCALED variables
-        w_unscaled = struct_SX(w_scaled, data=W_scale@w_scaled)
+        w_unscaled = struct_SX(w_scaled, data=W_scale @ w_scaled)
 
         # the scaled bounds, initial values
-        w0_scaled = ca.inv(W_scale)@self.w0
-        lbw_scaled= ca.inv(W_scale)@self.lbw
-        ubw_scaled = ca.inv(W_scale)@self.ubw
+        w0_scaled = ca.inv(W_scale) @ self.w0
+        lbw_scaled = ca.inv(W_scale) @ self.lbw
+        ubw_scaled = ca.inv(W_scale) @ self.ubw
         G_unscaled = f_G(w_unscaled)
         J_unscaled = f_J(w_unscaled)
 
+        # ---------- create the nlp ---------------
         print('Building NLP')
-        # create the nlp
         nlp = {'x': w_scaled,
                'f': J_unscaled,
                'g': G_unscaled}
@@ -160,18 +168,20 @@ class STESNLP:
 
         solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
 
+        # ------------ solve the nlp --------------
         print('Solving NLP')
-        # solve the nlp
         tic = time.time()
         res = solver(x0=w0_scaled, lbx=lbw_scaled, ubx=ubw_scaled, lbg=self.lbG, ubg=self.ubG)
         solver_duration = time.time() - tic
         wopt = self.w(res['x'])
 
         # revert the scaling
-        wopt = self.w(W_scale@wopt)
+        wopt = self.w(W_scale @ wopt)
 
         # process the results into a single dictionary
-        results = self.processOutput(wopt, solver.stats(),solver_duration)
+        results = self.processOutput(wopt, solver.stats(), solver_duration)
+
+        print(' ... Done!')
 
         return results
 
@@ -204,11 +214,11 @@ class STESNLP:
 
         # discretization stats
         results.addResult('N', self.N, '-', 'Number of (fine) discretization intervals')
-        results.addResult('T', self.T, 'h', 'Total time horizon')
+        results.addResult('T', self.Tend, 'h', 'Total time horizon')
         results.addResult('h', self.h, 'h', '(fine) step size')
 
         # time grid
-        results['timegrid'] = np.linspace(0, self.T - self.h, self.N)
+        results['timegrid'] = np.linspace(0, self.Tend - self.h, self.N)
 
         # get the other outputs
         for key, subdict in self.system.outputs.items():
@@ -220,7 +230,7 @@ class STESNLP:
             else:
                 write_val = values
 
-            results.addResult(key, write_val, subdict.get('unit','-'), subdict.get('description','-'))
+            results.addResult(key, write_val, subdict.get('unit', '-'), subdict.get('description', '-'))
 
         # information from the system
         results.addResult('nx', self.system.nx, '-', 'Number of states')

@@ -1,8 +1,8 @@
 import casadi as ca
 import numpy as np
 
-from systemmodels.systemModel import SystemModel, Data
-from utility import Constants
+from systemmodels.systemModel import SystemModel
+from utility import Constants, Data
 
 
 class StratStorageModel(SystemModel):
@@ -206,12 +206,11 @@ class StratStorageModel(SystemModel):
         return self.C_g, self.R_g
 
     def build_fixed_cost(self):
-        I_hp,  I_s, I_pv, I_wind, I_bat = self.constants.investment()
-        CAPEX_hp = I_hp * self.C_hp
-        CAPEX_s = I_s * self.V_s
-        CAPEX_pv = I_pv * self.C_pv
-        CAPEX_wind = I_wind * self.C_wind
-        CAPEX_bat = I_bat * self.C_bat
+        CAPEX_hp = self.constants.I_hp * self.C_hp
+        CAPEX_s = self.constants.I_s * self.V_s
+        CAPEX_pv = self.constants.I_pv * self.C_pv
+        CAPEX_wind = self.constants.I_wind * self.C_wind
+        CAPEX_bat = self.constants.I_bat * self.C_bat
         CAPEX = CAPEX_hp + CAPEX_s + CAPEX_pv + CAPEX_wind + CAPEX_bat
         OPEX = 0.01 * (CAPEX_s + CAPEX_pv) + 0.02 * (CAPEX_wind + CAPEX_bat) + 0.025 * CAPEX_hp
 
