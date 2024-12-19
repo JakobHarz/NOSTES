@@ -1,9 +1,8 @@
-from typing import Union, List
+import time
 
 import numpy as np
-
 from systemmodels.systemModel import SystemModel, Data
-from utility import Constants, NumpyStruct, Results
+from utility import Constants, Results
 import casadi as ca
 from casadi.tools import struct_symSX, entry, struct_SX
 
@@ -163,24 +162,26 @@ class STESNLP:
 
         print('Solving NLP')
         # solve the nlp
+        tic = time.time()
         res = solver(x0=w0_scaled, lbx=lbw_scaled, ubx=ubw_scaled, lbg=self.lbG, ubg=self.ubG)
+        solver_duration = time.time() - tic
         wopt = self.w(res['x'])
 
         # revert the scaling
         wopt = self.w(W_scale@wopt)
 
         # process the results into a single dictionary
-        results = self.processOutput(wopt, solver.stats())
+        results = self.processOutput(wopt, solver.stats(),solver_duration)
 
         return results
 
-    def processOutput(self, wopt, solver_stats: dict) -> Results:
+    def processOutput(self, wopt, solver_stats: dict, solver_duration: float) -> Results:
         """ Processes the solution of the NLP into a dictionary.
         The keys in the dictionary are the defined outputs of the system.
         """
 
         # get the optimal outputs
-        rawOutputs = NumpyStruct(self.system.outputStruct.repeated(self.f_outputs(wopt)))
+        rawOutputs = self.system.outputStruct.repeated(self.f_outputs(wopt))
 
         # empty results dictionary
         results = Results()
@@ -195,7 +196,7 @@ class STESNLP:
 
         # solver stats
         results.addResult('solver_return_status', solver_stats['return_status'], '-', 'Return Status of the Solver')
-        results.addResult('solver_t_wall_total', solver_stats['t_wall_total'], 's', 'Total Wall Time of the Solver')
+        results.addResult('solver_t_wall_total', solver_duration, 's', 'Total Wall Time of the Solver')
         results.addResult('solver_iter_count', solver_stats['iter_count'], '-', 'Number of Iterations of the Solver')
 
         # nlp stats
@@ -211,7 +212,7 @@ class STESNLP:
 
         # get the other outputs
         for key, subdict in self.system.outputs.items():
-            values = rawOutputs[:, key]
+            values = np.array(rawOutputs[:, key]).squeeze()
 
             # check if all the values in the first dimension are the same
             if subdict['type'] == 'single':

@@ -1,8 +1,6 @@
 from typing import List, Union
-
 import numpy as np
 from tabulate import tabulate
-
 
 class Constants:
     rho = 1000  # [kg/m^3] Density of water
@@ -94,29 +92,16 @@ class Constants:
         return strat_params
 
 
-class NumpyStruct:
-    """
-    Helper class to convert the values of a DM struct to numpy arrays, especially for plotting.
-    Indexing the instance will index the DM struct and return a numpy array of the result, with proper shapes.
-
-    Example:
-
-    >>> Xsim = model.x_struct.repeated(Xsim)
-    >>> Xsim_plotting = NumpyStruct(Xsim)
-    >>> plt.plot(Xsim_plotting[:, 't'], Xsim_plotting[:, 'x', 0])
-
-    """
-
-    def __init__(self, DMStruct):
-        self.DMStruct = DMStruct
-
-    def __getitem__(self, slice) -> np.ndarray:
-        slice_result = self.DMStruct[slice]
-        # convert to numpy array and squeeze
-        return np.array(slice_result).squeeze()
-
-
 class Results:
+
+    """ A class to store the results of the optimization problem, including the optimal trajectories, the optimal parameters.
+    Also includes stats from the NLP solver, sizing, cost function values etc.
+
+    Can be saved and loaded from a file.
+
+    use results.printAll() to print an overview in the console.
+
+    """
 
     # Expose some results, for easier access, not sure if this is useful
     X: np.ndarray = np.nan
@@ -265,10 +250,8 @@ class Results:
 
         return f"{significand:.2f} {exponent_letter}"
 
-
     def printSizings(self, comparewith: 'Results' = None):
         self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
-
 
     def printNLPStats(self, comparewith: 'Results' = None):
         self.printValues(['nlp_w_size','solver_iter_count','solver_t_wall_total'], comparewith=comparewith)
