@@ -1,15 +1,39 @@
-# STESBox: 
+# NOSTES: A mini toolbox for the Simultaneous Design and Control Optimization of Seasonal Thermal Energy Storage Systems
 
-A mini toolbox to compute optimal design parameters and controls for a
+by Wonsun Song, Jakob Harzer
 
+![figure1](data/_readmePictures/graphicalAbstract.svg)
 
+This mini toolbox provides code for the optimzation of design parameters and control strategy for a seasonal thermal energy storage system. The system consists of renewable energy sources, that are connect to a short term storage (battery) and a long-term storage (thermal heat storage), and used to satisfy the demands of a large number of households.
+Given this system, two key questions arise:
+- For a given demand profile over a year, how should we control the energy flows?
+- How should the system components be sized to minimize the running and investment costs?
 
-Related publication: ....
+This codes formulates and solves a nonlinear optimization problem to answer these questions. The optimal control problem that is solved is:
+
+<img src="data/_readmePictures/ocp.png" width="300" style="display: block; margin: auto; "/>
+
+where the objective function is the sum of the running costs of the system over a year, and the constraints are the energy balances of the system, the capacity constraints of the components, and the control constraints.
+
+For more details, please consider the below publication:
+
+Related publication: YET TO BE ADDED.
 
 
 
 ## Getting started
+For a simple example run the `dietenbach.py` file in the main directory:
+```bash
+python dietenbach_average.py
+```
+This will run the optimization for the Dietenbach case study of the paper using the example data provided in the data folder.
+The results can then analyzed using the `plotResults.py` file in the main directory:
+```bash
+python plotResults.py
+```
 
+
+## Installation & Prerequisites
 Required python packages:
 - numpy
 - casadi
@@ -19,48 +43,31 @@ Required python packages:
 
 Tested with python 3.8.
 
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The user provides a data file with the following entries (columns):
+ - `T_amb`: ambient temperature [K (!)]
+ - `P_pv`: power of the pv [W], of the installed capacity defined below
+ - `P_wind`: power of the wind [W], of the installed capacity defined below
+ - `P_load`: electric household power demand [W]
+ - `Qdot_load`: heat demand of the household [W]
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+The user also has to provide the following default scaling parameters:
+rough guesses for the sizes of the heatpump and battery,
+and also the installed capacity PV and Wind of which the data is originating.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+For example, for the dietenbach dataset:
+```python
+from utility import Constants
+constants = Constants()
+constants.C_bat_default = 2E7  # Wh
+constants.C_hp_default = 2E7  # W (thermal)
+constants.C_wind_default = 11.2 * 1e6  # Wp
+constants.C_pv_default = 18.56 * 1e6  # Wp 
+```
+We provide implementation of two different discretization schemes:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
+This research was supported by DFG via project 424107692, 504452366 (SPP 2364), and 525018088, by BMWK via 03EI4057A and 03EN3054B, and by the EU via ELO-X 953348. We thank Manuel Kollmar, Armin Nurkanović, and Arne Groß for their help, guidance, and fruitful discussions.
