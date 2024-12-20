@@ -28,7 +28,7 @@ systemmodel =  StratStorageModel(4, 2, 2, data = data, constants=constants)
 nlp = STESNLP(systemmodel, data, N=365 * 12)
 
 # solve the NLP and save the results
-res = nlp.solve({'ipopt.max_iter': 1000, 'ipopt.linear_solver': 'ma27'})
+res = nlp.solve()
 res.save('results/dietenbach_average.npz')
 
 print("\nOptimal Sizings:\n"+ "-"*20)
