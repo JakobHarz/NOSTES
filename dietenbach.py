@@ -21,11 +21,11 @@ constants.C_hp_default = 2E7  # W (thermal)
 constants.C_wind_default = 11.2 * 1e6  # Wp (use 5.6MW two wind turbine, including wake effect)
 constants.C_pv_default = 18.56 * 1e6  # Wp (23.2% efficiency, yield 232Wp/m^2, use 80*1e3 modules of 600Wp)
 
-# systemmodel =  SimpleStorageModel(data = data)
+# build the system model
 systemmodel =  StratStorageModel(4, 2, 2, data = data, constants=constants)
 
 # build the NLP
-nlp = STESNLP(systemmodel, data, N=365 * 12)
+nlp = STESNLP(systemmodel, data, N=365 * 24)
 
 # solve the NLP and save the results
 res = nlp.solve()
