@@ -2,8 +2,8 @@ import casadi as ca
 import numpy as np
 
 from systemmodels.stratstoragemodel import StratStorageModel
-from systemmodels.systemModel import SystemModel, Data
-from utility import Constants
+from systemmodels.systemModel import SystemModel
+from utility import Constants, Data
 
 
 class AveragedStratStorageModel(StratStorageModel):
