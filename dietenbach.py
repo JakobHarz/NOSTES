@@ -25,7 +25,7 @@ constants.C_pv_default = 18.56 * 1e6  # Wp (23.2% efficiency, yield 232Wp/m^2, u
 systemmodel =  StratStorageModel(4, 2, 2, data = data, constants=constants)
 
 # build the NLP
-nlp = STESNLP(systemmodel, data, N=365 * 12)
+nlp = STESNLP(systemmodel, data, N=365 * 24)
 
 # solve the NLP and save the results
 res = nlp.solve({'ipopt.max_iter': 1000, 'ipopt.linear_solver': 'ma27'})

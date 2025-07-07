@@ -4,15 +4,14 @@ import casadi as ca
 
 from casadi.tools import struct_symSX, entry, struct_SX
 
-from utility import Data
+from utility_nosto import Data
 
 
 class SystemModel:
     """ Base Class for a system model,
     defines the properties that are needed for the NLP (dynamics f, fixed costs, running costs, state and control bounds).
     The child classes should implement these properties.
-        p_fix (5): - Storage size [m^3]
-                   - HP capacity [W]
+        p_fix (4): - HP capacity [W]
                    - PV Install capacity [W]
                    - Wind Install capacity [W]
                    - Battery capacity [Wh]
@@ -44,7 +43,7 @@ class SystemModel:
         # names for states and controls, can be overwritten
         self.stateNames = [f'x_{i}' for i in range(nx)]
         self.controlNames: List[str] = ['P_hp', 'P_ch', 'P_dis', 'P_Grid_buy', 'P_Grid_sell']
-        self.p_fix_names: list = ['s_S', 's_hp', 's_pv', 's_wind', 's_bat']
+        self.p_fix_names: list = ['s_hp', 's_pv', 's_wind', 's_bat']
 
         # initialization, overwrite in the subclass
         self.x0 = ca.DM.zeros(self.x.shape)
@@ -82,8 +81,9 @@ class SystemModel:
         return self.data.getDataAtTime(time)
 
     def compute_Qdot_hp(self, P_hp, T_amb):
-        T_lift = self.constants.T_hp - T_amb  # [K] Temperature lift of the heat pump
-        COP = self.constants.eta_hp * self.constants.T_hp / T_lift  # Coefficient of performance of the heat pump
+        T_hp = 40 + 273.15  # [K] Heat pump temperature, can be adjusted
+        T_lift = T_hp - T_amb  # [K] Temperature lift of the heat pump
+        COP = self.constants.eta_hp * T_hp / T_lift  # Coefficient of performance of the heat pump
         Qdot_hp = P_hp * COP  # Heat output of the heat pump
         return Qdot_hp
 

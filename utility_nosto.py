@@ -56,30 +56,6 @@ class Constants:
     eta_dis = 0.95  # Discharging efficiency
 
 
-    def strat_storage(self):
-        # Store the params for different layers of the storage
-        strat_params = {
-            2: {
-                'tl_init': 153.3,
-                'bl_init': 73.2,
-                'ml_init': [125.94],
-                'mh': [5.12]
-            },
-            3: {
-                'tl_init': 153.3,
-                'bl_init': 73.2,
-                'ml_init': [136.31, 113.51],
-                'mh': [3.18, 4.27]
-            },
-            4: {
-                'tl_init': 153.3,
-                'bl_init': 73.2,
-                'ml_init': [140.95, 125.94, 106.11],
-                'mh': [2.31, 2.81, 3.71]
-            }
-        }
-        return strat_params
-
 
 class Results:
     """ A class to store the results of the optimization problem,
@@ -98,7 +74,6 @@ class Results:
     U: np.ndarray = np.nan
     J_running: np.ndarray = np.nan
     J_fix: np.ndarray  = np.nan
-    V_s: np.ndarray = np.nan
     C_bat: np.ndarray = np.nan
     C_hp: np.ndarray = np.nan
     C_pv: np.ndarray = np.nan
@@ -111,14 +86,13 @@ class Results:
         self.keys: List[str] = []
 
         # add some empty results
-        self.addResult('X', np.nan, 'K', 'State Variables')
+        # self.addResult('X', np.nan, 'K', 'State Variables')
         self.addResult('timegrid', np.nan, 'h', 'Time Grid')
         self.addResult('U', np.nan, 'W', 'Control Variables')
         self.addResult('J_running', np.nan, 'EUR', 'Running Costs')
         self.addResult('J_fix', np.nan, 'EUR', 'Investment Costs')
 
         # do for V_s, C_bat, C_hp, C_pv, C_wind
-        self.addResult('V_s', np.nan, 'm^3', 'Size of the thermal storage')
         self.addResult('C_bat', np.nan, 'Wh', 'Capacity of the battery')
         self.addResult('C_hp', np.nan, 'W', 'Capacity of the heat pump')
         self.addResult('C_pv', np.nan, 'Wp', 'Capacity of the PV')
@@ -210,7 +184,7 @@ class Results:
         print(tabulate(table_data, headers=headers, tablefmt='rst', maxcolwidths=50, colalign=colaling))
 
     def printSizings(self, comparewith: 'Results' = None):
-        self.printValues(['V_s', 'C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
+        self.printValues(['C_bat', 'C_hp', 'C_pv', 'C_wind'], comparewith=comparewith)
 
     def printNLPStats(self, comparewith: 'Results' = None):
         self.printValues(['nlp_w_size', 'solver_iter_count', 'solver_t_wall_total'], comparewith=comparewith)
@@ -241,18 +215,31 @@ class Results:
                 value_str = value_str[:20] + '...'
             return value_str
 
+
     def _formatEngineering(self, value):
         """ formats the given value in engineering notation"""
+
+        # --- ADD THIS LINE TO FIX THE TypeError ---
+        # Extract the single scalar value from the numpy array
+        value = value.item()
+        # --- END OF FIX ---
+
+        # First, handle special cases like NaN or infinity
+        if not np.isfinite(value):
+            return str(value)  # Simply return 'nan' or 'inf' as a string
+        # Also handle the case of zero, since log10(0) is -inf
+        if value == 0:
+            return "0.00 "
+        # --- END OF ADDED CHECK ---
 
         exponent = np.floor(np.log10(np.abs(value))) // 3 * 3
         significand = value / 10 ** exponent
 
-        # look up the exponent letter in a dictionary from -12 to 12
+        # look up the exponent letter in a dictionary
         exponent_dict = {3: 'k', 6: 'M', 9: 'G', 12: 'T', 0: '', -3: 'm', -6: 'u', -9: 'n', -12: 'p'}
         exponent_letter = exponent_dict.get(int(exponent), f'E{exponent}')
 
         return f"{significand:.2f} {exponent_letter}"
-
 
 class Data:
     """ Class to preprocess and store the data for the NLP.

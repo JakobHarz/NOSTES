@@ -67,7 +67,7 @@ class StratStorageModel(SystemModel):
         P_grid = P_grid_buy - P_grid_sell
 
         # dynamics
-        Qdot_hp = self.compute_Qdot_hp(self.u[0], self.p_data[0])  # P_hp, T_amb
+        Qdot_hp = self.compute_Qdot_hp(self.u[0], self.p_data[0])  # P_hp, T_amb, T_hp
         ODE = ca.vertcat(self.storage_model(x_sto= self.x[:-1], Tamb=self.p_data[0], Qdot_hh=self.p_data[4],Qdot_hp=Qdot_hp,
                                             p_fix = self.p_fix),
                          self.battery_model(self.x, self.u, self.p_fix, self.p_data))
@@ -220,7 +220,8 @@ class StratStorageModel(SystemModel):
         ANF = (r * (1 + r)**n) / ((1 + r)**n - 1)
 
         ANI = CAPEX * ANF
-        fixed_cost = ANI * self.constants.n_years + OPEX * self.constants.n_years
+        #fixed_cost = ANI * self.constants.n_years + OPEX * self.constants.n_years
+        fixed_cost = ANI + OPEX
 
 
         # append to output
@@ -246,6 +247,8 @@ class StratStorageModel(SystemModel):
 
         # Qdot_hp = self.compute_Qdot_hp(u[0] * p_fix[1], p_data[0])  # P_hp, T_amb
         mdot_hp = Qdot_hp / (self.constants.c_p * (self.constants.T_hp - T_s[-1]))  # [kg/s]
+        # T_hp = T_s[0] + 5 # [K] Heat pump temperature
+        # mdot_hp = Qdot_hp / (self.constants.c_p * (T_hp - T_s[-1]))  # [kg/s]
         self.mdot_hp = mdot_hp
         self.Qdot_load = Qdot_hh  # heat demand of the households
         self.mdot_load = self.Qdot_load / (
