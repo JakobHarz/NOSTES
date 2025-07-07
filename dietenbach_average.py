@@ -28,8 +28,13 @@ systemmodel = AveragedStratStorageModel(4, 2, 2, data=data, constants=constants)
 nlp = AverageSTESNLP(systemmodel, data, N=365 * 24)
 
 # solve the NLP and save the results
+<<<<<<< HEAD
 res = nlp.solve({'ipopt.max_iter': 1000, 'ipopt.linear_solver': 'ma27'})
 res.save('results/dietenbach_average_test.npz')
+=======
+res = nlp.solve()
+res.save('results/dietenbach_average.npz')
+>>>>>>> dd27a098f686de4b6ac52b75c218ed507c05c003
 
 print("\nOptimal Sizings:\n"+ "-"*20)
 res.printSizings()
