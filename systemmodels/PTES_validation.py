@@ -146,36 +146,17 @@ class ThermalModel:
             C_ground_i = volume_i * self.constants.rho_g * self.constants.c_pg
             self.C_g.append(C_ground_i)
 
-        # self.d = [0] + [self.distance / 2] + [self.distance / 2 + self.distance * (i + 1) for i in
-        #                                       range(self.g_n - 1)] + [self.distance * self.g_n]
-        # for i in range(1, self.g_n + 2):
-        #     A_s = (self.bl + self.d[i]) ** 2 + 2 * (self.height + self.d[i]) * (
-        #                 (self.tl + self.d[i]) + (self.bl + self.d[i]))
-        #     self.A_s.append(A_s)
-        # self.A_s = np.array(self.A_s)
-        # perimeter of a square frustum at radius offset d_i
-        def perimeter(side_len):          # side_len = tl + d_i  or  bl + d_i
-            return 4 * side_len
-
-        self.A_side = []
+        self.d = [0] + [self.distance / 2] + [self.distance / 2 + self.distance * (i + 1) for i in
+                                              range(self.g_n - 1)] + [self.distance * self.g_n]
         for i in range(1, self.g_n + 2):
-            # average perimeter of inner and outer square
-            P_avg = 0.5 * (perimeter(self.tl + (i-1)*self.distance) +
-                        perimeter(self.tl +  i   *self.distance))
-            A_side = P_avg * self.height                      # lateral area only
-            self.A_side.append(A_side)
+            A_s = (self.bl + self.d[i]) ** 2 + 2 * (self.height + self.d[i]) * (
+                        (self.tl + self.d[i]) + (self.bl + self.d[i]))
+            self.A_s.append(A_s)
+        self.A_s = np.array(self.A_s)
 
-        self.distances = np.array([self.distance/2] +
-                                [self.distance]*(self.g_n-1) +
-                                [self.distance/2])
-
-        self.R_g = (self.distances /
-                    (self.constants.lambda_ground * np.array(self.A_side)))
-
-        # self.distances = np.array([self.distance / 2] + [self.distance] * (self.g_n - 1) + [self.distance / 2])
-        # R_ground_i = (1 / self.constants.lambda_ground) * self.distances / (self.A_s)
-        # self.R_g = R_ground_i.tolist()
-        
+        self.distances = np.array([self.distance / 2] + [self.distance] * (self.g_n - 1) + [self.distance / 2])
+        R_ground_i = (1 / self.constants.lambda_ground) * self.distances / (self.A_s)
+        self.R_g = R_ground_i.tolist()
         self.C_g = np.array(self.C_g)
         return self.C_g, self.R_g
 

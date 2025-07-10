@@ -2,11 +2,26 @@ import numpy as np
 import pandas as pd
 import casadi as ca
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import re
 from systemmodels.PTES_validation import ThermalModel as PTES
 from utility import Constants
 
 constants = Constants()
+def latexify():  
+ params_MPL_Tex = {  
+             'text.usetex': True,  
+             'font.family': 'serif',  
+             # Use 10pt font in plots, to match 10pt font in document  
+             "axes.labelsize": 14,  
+             "font.size": 14,  
+             # Make the legend/label fonts a little smaller  
+             "legend.fontsize": 14,  
+             "xtick.labelsize": 14,  
+             "ytick.labelsize": 14  
+           }  
+ plt.rcParams.update(params_MPL_Tex)
+latexify()
 
 # --- Load Data ---
 df = pd.read_csv('data/Dronninglund_treated_data_and_flow_rates_2014.csv', index_col=[0], parse_dates=True)
@@ -51,7 +66,7 @@ Tg_15_full = df['Tg_15'].resample('10T').mean().reindex(full_year_index).fillna(
 
 # --- Step 2: Select Measured Temperatures for Direct Comparison ---
 print("Mapping model layers to closest physical sensors...")
-num_storage_layers = 4
+num_storage_layers = 10
 
 # Instantiate a temporary model to get the calculated layer heights
 temp_model = PTES(nk=1, s_n=num_storage_layers, g_n=3, distance=2)
@@ -166,20 +181,35 @@ sim_results_df = pd.DataFrame(
 )
 T_sim_C = sim_results_df[[f'T_sim_layer_{i+1}' for i in range(num_storage_layers)]] - 273.15
 
-plt.figure(figsize=(14, 8))
-# Use a colormap for plotting many lines
-colors = plt.cm.viridis(np.linspace(0, 1, num_storage_layers))
-for i in range(num_storage_layers):
-    layer_num = i + 1
-    plt.plot(df_meas_aggr.index, df_meas_aggr[f'T_meas_layer_{layer_num}'], linestyle='--', color=colors[i])
-    plt.plot(T_sim_C.index, T_sim_C[f'T_sim_layer_{layer_num}'], linestyle='-', color=colors[i], label=f'Layer {layer_num}')
 
-plt.xlabel('Date')
-plt.ylabel('Temperature [°C]')
-plt.title(f'Model Validation: Simulation vs. Measurement ({num_storage_layers}-Layer Model)')
-plt.legend()
-plt.grid(True, linestyle=':', alpha=0.7)
+# Apply the LaTeX formatting
+latexify()
+# Create the plot with the specified style
+fig, ax = plt.subplots(figsize=(9, 5))
+
+# Define the LaTeX labels for the legend
+storage_state_labels = {i: rf"$T_\mathrm{{s{i+1}}}$" for i in range(num_storage_layers)}
+
+# Plot both simulated and measured data
+for i in range(num_storage_layers):
+    label = storage_state_labels.get(i, f'Layer {i+1}')
+    
+    ax.plot(df_meas_aggr.index, df_meas_aggr[f'T_meas_layer_{i+1}'], f'C{i}--', linewidth=1.0, alpha=0.7)
+    ax.plot(T_sim_C.index, T_sim_C[f'T_sim_layer_{i+1}'], f'C{i}-', label=label, linewidth=1.2)
+
+# --- Formatting ---
+ax.legend(loc='lower right', bbox_to_anchor=(0.77, 0.02), ncol=5) # Adjusted for 10 layers
+ax.set_ylabel(r'$T$ [°C]')
+ax.set_xlabel('Date')
+ax.grid(alpha=0.25)
+
+# Format the x-axis to show month abbreviations
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+ax.xaxis.set_major_locator(mdates.MonthLocator())
+
+fig.autofmt_xdate()
 plt.tight_layout()
+plt.savefig('validation_results.pdf')
 plt.show()
 
 for i in range(num_storage_layers):
