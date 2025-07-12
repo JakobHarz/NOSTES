@@ -66,7 +66,7 @@ Tg_15_full = df['Tg_15'].resample('10T').mean().reindex(full_year_index).fillna(
 
 # --- Step 2: Select Measured Temperatures for Direct Comparison ---
 print("Mapping model layers to closest physical sensors...")
-num_storage_layers = 10
+num_storage_layers = 4
 
 # Instantiate a temporary model to get the calculated layer heights
 temp_model = PTES(nk=1, s_n=num_storage_layers, g_n=3, distance=2)
@@ -133,7 +133,7 @@ sim_params = {key: value[start_index:] for key, value in params_to_slice.items()
 
 # --- Step 4: Configure and Run the Simulation ---
 N = len(df_meas_aggr)
-num_ground_layers = 4
+num_ground_layers = 3
 print(f"New simulation period: {df_meas_aggr.index[0]} to {df_meas_aggr.index[-1]}")
 print(f"Total simulation steps (N): {N}")
 

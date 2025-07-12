@@ -221,6 +221,16 @@ class Results:
     def __getitem__(self, item):
         return self._valueDict[item]
 
+    def get(self, key, default=None):
+        return self._valueDict.get(key, default)
+    
+    def __contains__(self, key):
+        """
+        Allows using the 'in' operator, e.g., if 'V_s' in result:
+        This is good practice and makes the class more robust.
+        """
+        return key in self._valueDict
+
     def __setitem__(self, key, value):
         self.addResult(key, value)
 

@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from systemmodels.systemModel import SystemModel
-from utility_nosto import Constants, Results, Data
+from utility import Constants, Results, Data
 import casadi as ca
 from casadi.tools import struct_symSX, entry, struct_SX
 
