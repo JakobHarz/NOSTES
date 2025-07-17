@@ -17,7 +17,7 @@ where the objective function is the sum of the running costs of the system over 
 
 For more details, please consider the below publication:
 
-Related publication: YET TO BE ADDED.
+Related publication: [https://arxiv.org/abs/2501.07427](https://arxiv.org/abs/2501.07427)
 
 
 
@@ -72,7 +72,7 @@ We provide an implementation of two different discretization schemes:
     systemmodel =  StratStorageModel(4, 2, 2, data = data, constants=constants)
     
     # build the NLP
-    nlp = STESNLP(systemmodel, data, N=365 * 24)
+    nlp = STESNLP(systemmodel, data)
     ```
 - Average Problem Discretization, the inputs to the slow temperature dynamics are averaged over a day, reducing the problem size by ~2, compare `dietenbach_average.py`: **A bit less accurate, but significantly faster**.
     ```python
@@ -80,7 +80,7 @@ We provide an implementation of two different discretization schemes:
     systemmodel = AveragedStratStorageModel(4, 2, 2, data=data, constants=constants)
     
     # build the NLP
-    nlp = AverageSTESNLP(systemmodel, data, N=365 * 6)
+    nlp = AverageSTESNLP(systemmodel, data)
     ```
 
 ## Authors and acknowledgment
