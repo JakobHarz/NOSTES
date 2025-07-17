@@ -1,7 +1,6 @@
 import casadi as ca
-import numpy as np
 
-from systemmodels.systemModel_nosto import SystemModel
+from results._paperResults.systemModel_nosto import SystemModel
 from utility_nosto import Constants, Data
 
 

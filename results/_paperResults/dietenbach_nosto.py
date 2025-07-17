@@ -1,5 +1,5 @@
-from nlp_nosto import STESNLP
-from systemmodels.nostoragemodel import NoStorageModel
+from results._paperResults.nlp_nosto import STESNLP
+from results._paperResults.nostoragemodel import NoStorageModel
 from utility_nosto import Constants, Data
 
 # the user has to provide data,

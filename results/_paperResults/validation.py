@@ -4,7 +4,7 @@ import casadi as ca
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import re
-from systemmodels.PTES_validation import ThermalModel as PTES
+from results._paperResults.PTES_validation import ThermalModel as PTES
 from utility import Constants
 
 constants = Constants()
@@ -24,7 +24,7 @@ def latexify():
 latexify()
 
 # --- Load Data ---
-df = pd.read_csv('data/Dronninglund_treated_data_and_flow_rates_2014.csv', index_col=[0], parse_dates=True)
+df = pd.read_csv('results/_paperResults/Dronninglund_treated_data_and_flow_rates_2014.csv', index_col=[0], parse_dates=True)
 
 
 # --- Step 1: Prepare Full-Year 10-Minute Data ---

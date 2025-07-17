@@ -14,9 +14,9 @@ ELECTRICITY_PRICES = np.linspace(0.1, 0.6, 6) # Corresponds to c_el_values
 
 # Define file patterns in a dictionary for easy access.
 FILE_PATTERNS = {
-    'full_model': 'results/dietenbach_average_varyPrice_{i}.npz',
-    'no_stes': 'results/dietenbach_nosto_varyPrice_{i}.npz',
-    'no_wind': 'results/dietenbach_nowind_average_varyPrice_{i}.npz',
+    'full_model': 'dietenbach_average_varyPrice_{i}.npz',
+    'no_stes': 'dietenbach_nosto_varyPrice_{i}.npz',
+    'no_wind': 'dietenbach_nowind_average_varyPrice_{i}.npz',
 }
 
 FINANCIAL_CONSTANTS = {
