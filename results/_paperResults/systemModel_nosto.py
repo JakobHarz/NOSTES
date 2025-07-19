@@ -3,7 +3,10 @@ from typing import List
 import casadi as ca
 
 from casadi.tools import struct_symSX, entry, struct_SX
-
+import os
+import sys
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
 from utility_nosto import Data
 
 

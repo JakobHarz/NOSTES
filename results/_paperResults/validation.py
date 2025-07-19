@@ -4,7 +4,11 @@ import casadi as ca
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import re
-from results._paperResults.PTES_validation import ThermalModel as PTES
+from PTES_validation import ThermalModel as PTES
+import os
+import sys
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
 from utility import Constants
 
 constants = Constants()
@@ -24,7 +28,7 @@ def latexify():
 latexify()
 
 # --- Load Data ---
-df = pd.read_csv('results/_paperResults/Dronninglund_treated_data_and_flow_rates_2014.csv', index_col=[0], parse_dates=True)
+df = pd.read_csv('Dronninglund_treated_data_and_flow_rates_2014.csv', index_col=[0], parse_dates=True)
 
 
 # --- Step 1: Prepare Full-Year 10-Minute Data ---
@@ -66,7 +70,7 @@ Tg_15_full = df['Tg_15'].resample('10T').mean().reindex(full_year_index).fillna(
 
 # --- Step 2: Select Measured Temperatures for Direct Comparison ---
 print("Mapping model layers to closest physical sensors...")
-num_storage_layers = 4
+num_storage_layers = 10
 
 # Instantiate a temporary model to get the calculated layer heights
 temp_model = PTES(nk=1, s_n=num_storage_layers, g_n=3, distance=2)
@@ -200,7 +204,6 @@ for i in range(num_storage_layers):
 # --- Formatting ---
 ax.legend(loc='lower right', bbox_to_anchor=(0.77, 0.02), ncol=5) # Adjusted for 10 layers
 ax.set_ylabel(r'$T$ [°C]')
-ax.set_xlabel('Date')
 ax.grid(alpha=0.25)
 
 # Format the x-axis to show month abbreviations

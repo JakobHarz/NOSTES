@@ -41,7 +41,7 @@ Required python packages:
 - typing
 - tabulate
 
-Tested with python 3.8.
+Tested with python 3.8, 3.11, 3.12
 
 ## Usage
 
