@@ -68,7 +68,7 @@ class Results:
 
     """
 
-    # Expose some results, for easier access, not sure if this is useful
+    # Expose some results, for easier access
     X: np.ndarray = np.nan
     timegrid: np.ndarray = np.nan
     U: np.ndarray = np.nan
@@ -218,11 +218,8 @@ class Results:
 
     def _formatEngineering(self, value):
         """ formats the given value in engineering notation"""
-
-        # --- ADD THIS LINE TO FIX THE TypeError ---
         # Extract the single scalar value from the numpy array
         value = value.item()
-        # --- END OF FIX ---
 
         # First, handle special cases like NaN or infinity
         if not np.isfinite(value):
@@ -230,7 +227,6 @@ class Results:
         # Also handle the case of zero, since log10(0) is -inf
         if value == 0:
             return "0.00 "
-        # --- END OF ADDED CHECK ---
 
         exponent = np.floor(np.log10(np.abs(value))) // 3 * 3
         significand = value / 10 ** exponent

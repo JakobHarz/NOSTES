@@ -137,12 +137,12 @@ sim_params = {key: value[start_index:] for key, value in params_to_slice.items()
 
 # --- Step 4: Configure and Run the Simulation ---
 N = len(df_meas_aggr)
-num_ground_layers = 3
+num_ground_layers = 2
 print(f"New simulation period: {df_meas_aggr.index[0]} to {df_meas_aggr.index[-1]}")
 print(f"Total simulation steps (N): {N}")
 
 def run_validation_simulation(model_class, initial_states, sim_steps, **kwargs):
-    model = model_class(nk=sim_steps, g_n=num_ground_layers, s_n=num_storage_layers, distance=5)
+    model = model_class(nk=sim_steps, g_n=num_ground_layers, s_n=num_storage_layers, distance=2)
     x, u, par, f = model.x, model.u, model.par, model.f
     x0 = ca.DM(initial_states)
     
