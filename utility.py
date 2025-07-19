@@ -12,7 +12,7 @@ class Constants:
 
     # ----- STORAGE -----
     U_wall_ins = 0.3  # [W/m^2K] Heat transfer coefficient
-    U_wall_noins = 80  # [W/m^2K] Heat transfer coefficient
+    U_wall_noins = 90  # [W/m^2K] Heat transfer coefficient
     height = 15  # [m] Height of the storage
     lambda_ground = 0.47  # W/mK
     radius = 63.1  # [m] scaled radius of the storage
@@ -35,7 +35,7 @@ class Constants:
     #price_sell = 0
     price_buy = 0.3  # EUR/kWh
     DOLLAR_TO_EURO = 0.92
-    I_hp = 0.375  # EUR/W
+    I_hp = 0.651  # EUR/W
     I_s = 30  # EUR/m^3
     I_pv = 1.491 * DOLLAR_TO_EURO  # EUR/Wp
     I_wind = 1.569 * DOLLAR_TO_EURO  # EUR/Wp
@@ -220,6 +220,16 @@ class Results:
 
     def __getitem__(self, item):
         return self._valueDict[item]
+
+    def get(self, key, default=None):
+        return self._valueDict.get(key, default)
+    
+    def __contains__(self, key):
+        """
+        Allows using the 'in' operator, e.g., if 'V_s' in result:
+        This is good practice and makes the class more robust.
+        """
+        return key in self._valueDict
 
     def __setitem__(self, key, value):
         self.addResult(key, value)

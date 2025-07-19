@@ -61,7 +61,7 @@ class SystemModel:
         # running costs: operational costs
         self.cost_grid = self.compute_running_cost(self.u)
         self.J_running = ca.Function('J_running', [self.u], [self.cost_grid], ['u'], ['J_running'])
-        """ The running costs over 20 years the system J_running = J_running(u)"""
+        """ The running costs over the system J_running = J_running(u)"""
 
         # lbp and ubp: bounds for the p_fix
         self.lbp = [0.1] * ca.DM.ones(self.p_fix.shape)
@@ -102,7 +102,7 @@ class SystemModel:
         price_buy_Wh = self.constants.price_buy / 1e3  # EUR/Wh
 
         cost_grid_annual = price_sell_Wh*P_grid_neg + price_buy_Wh*P_grid_pos
-        cost_grid = cost_grid_annual * self.constants.n_years  # [EUR]
+        cost_grid = cost_grid_annual #* self.constants.n_years  # [EUR]
         return cost_grid
 
     @property

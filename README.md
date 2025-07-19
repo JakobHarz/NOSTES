@@ -17,7 +17,7 @@ where the objective function is the sum of the running costs of the system over 
 
 For more details, please consider the below publication:
 
-Related publication: YET TO BE ADDED.
+Related publication: [https://arxiv.org/abs/2501.07427](https://arxiv.org/abs/2501.07427)
 
 
 
@@ -56,7 +56,7 @@ The user also has to provide the following default scaling parameters:
 rough guesses for the sizes of the heatpump and battery,
 and also the installed capacity PV and Wind of which the data is originating.
 
-For example, for the dietenbach dataset:
+For example, for the provided dietenbach dataset:
 ```python
 from utility import Constants
 constants = Constants()
@@ -65,9 +65,23 @@ constants.C_hp_default = 2E7  # W (thermal)
 constants.C_wind_default = 11.2 * 1e6  # Wp
 constants.C_pv_default = 18.56 * 1e6  # Wp 
 ```
-We provide implementation of two different discretization schemes:
-
-
+We provide an implementation of two different discretization schemes:
+- Full Problem Discretization, all state dynamics are discretized with 1h steps, compare `dietenbach.py`: **Accurate, but slow**.
+    ```python
+    # build the system model
+    systemmodel =  StratStorageModel(4, 2, 2, data = data, constants=constants)
+    
+    # build the NLP
+    nlp = STESNLP(systemmodel, data)
+    ```
+- Average Problem Discretization, the inputs to the slow temperature dynamics are averaged over a day, reducing the problem size by ~2, compare `dietenbach_average.py`: **A bit less accurate, but significantly faster**.
+    ```python
+    # build the system model
+    systemmodel = AveragedStratStorageModel(4, 2, 2, data=data, constants=constants)
+    
+    # build the NLP
+    nlp = AverageSTESNLP(systemmodel, data)
+    ```
 
 ## Authors and acknowledgment
-This research was supported by DFG via project 424107692, 504452366 (SPP 2364), and 525018088, by BMWK via 03EI4057A and 03EN3054B, and by the EU via ELO-X 953348. We thank Manuel Kollmar, Armin Nurkanović, and Arne Groß for their help, guidance, and fruitful discussions.
+This research was supported by DFG via project 525018088, by BMWK via 03EN3054B. We thank Manuel Kollmar, Armin Nurkanović, and Arne Groß for their help, guidance, and fruitful discussions.
